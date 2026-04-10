@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sky News World</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    font-family: 'Inter', sans-serif;
+    background: #000; color: #fff;
+    width: 100%; height: 100%;
+    overflow: hidden;
+  }
+
+  #wrapper {
+    width: 100vw; height: 100vh;
+    position: relative; overflow: hidden;
+  }
+
+  .slide, .intro-slide {
+    position: absolute; inset: 0;
+    opacity: 0;
+    transition: opacity 2s ease-in-out;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 1;
+    will-change: opacity;
+  }
+  .slide.active, .intro-slide.active { opacity: 1; pointer-events: auto; z-index: 2; }
+  .slide.prev, .intro-slide.prev { opacity: 0; z-index: 1; transition: opacity 2.5s ease-in-out; }
+  .slide.instant { transition: none; }
+  .intro-slide.instant-out { transition: none; opacity: 0; }
+
+  .intro-slide {
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 2.5vh;
+    transition: opacity 1.5s ease-in-out;
+  }
+  .intro-bg {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center, #1a050a 0%, #0a0a0a 70%);
+  }
+  .intro-glow {
+    position: absolute;
+    width: 50vmax; height: 50vmax;
+    border-radius: 50%;
+    opacity: 0.15;
+    background: radial-gradient(circle, #c41230, transparent 70%);
+  }
+  .intro-logo {
+    position: relative; z-index: 2;
+    height: min(8vw, 12vh);
+    object-fit: contain;
+  }
+  .intro-label {
+    position: relative; z-index: 2;
+    font-size: min(1.8vw, 2.8vh);
+    font-weight: 500;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    opacity: 0.5;
+  }
+  .intro-line {
+    position: relative; z-index: 2;
+    height: 2px; width: min(12vw, 150px);
+    background: #c41230;
+  }
+
+  .news-bg-full {
+    position: absolute; inset: -5%;
+    width: 110%; height: 110%;
+    object-fit: cover; object-position: center;
+    filter: brightness(0.55);
+    transform: scale(1);
+    transition: transform 12s ease-out;
+    will-change: transform;
+  }
+  .slide.active .news-bg-full { transform: scale(1.08); }
+
+  .news-gradient { position: absolute; inset: 0; z-index: 1; }
+  .news-gradient-bottom {
+    background: linear-gradient(0deg,
+      rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 25%,
+      rgba(0,0,0,0.1) 55%, transparent 100%);
+  }
+  .news-gradient-vignette {
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.5) 100%);
+  }
+
+  .news-content {
+    position: absolute; inset: 0; z-index: 2;
+    display: flex; flex-direction: column;
+    justify-content: flex-end;
+    padding: 5vh 5vw;
+  }
+
+  .news-source-bar {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 2.5vh;
+  }
+  .news-source-bar img.source-logo {
+    height: min(2.4vw, 3.8vh);
+    object-fit: contain;
+  }
+  .news-source-bar .news-ago {
+    font-size: min(0.9vw, 1.4vh);
+    color: rgba(255,255,255,0.4);
+    font-weight: 500;
+    padding: 0.4vh 1vw;
+    background: rgba(255,255,255,0.08);
+    border-radius: 100px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .news-title {
+    font-size: min(3.5vw, 5.5vh);
+    font-weight: 900; line-height: 1.15;
+    color: #e8eef8; margin-bottom: 2vh;
+    max-width: 70%;
+    text-shadow: 0 2px 20px rgba(0,0,0,0.5);
+  }
+
+  .news-desc-area {
+    max-width: 55%; max-height: 18vh;
+    overflow: hidden; position: relative;
+  }
+  .news-desc-area p {
+    font-size: min(1.2vw, 1.9vh);
+    line-height: 1.8;
+    color: rgba(255,255,255,0.7);
+    font-weight: 400;
+  }
+
+  .sky-accent .source-logo { filter: none; }
+  .sky-accent::before {
+    content: ''; position: absolute; bottom: 0; left: 0;
+    width: 100%; height: 4px; z-index: 3;
+    background: linear-gradient(90deg, #c41230, #c41230 30%, transparent);
+  }
+
+  #loading-screen {
+    position: fixed; inset: 0; z-index: 100;
+    background: #0a0a0a;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 3vh;
+    transition: opacity 0.8s ease;
+  }
+  #loading-screen.fade-out { opacity: 0; pointer-events: none; }
+  .loading-logo {
+    height: min(5vw, 7vh);
+    object-fit: contain;
+    opacity: 0.3;
+    transition: opacity 0.5s ease;
+  }
+  .loading-logo.loaded { opacity: 1; }
+  .loading-spinner {
+    width: min(3vw, 4vh); height: min(3vw, 4vh);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-top-color: rgba(255,255,255,0.5);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div id="loading-screen">
+  <img class="loading-logo" id="ll" src="https://static.cdnlogo.com/logos/s/65/sky-news.svg" alt="Sky News">
+  <div class="loading-spinner"></div>
+</div>
+
+<div id="wrapper">
+  <div class="intro-slide" id="intro-sky" data-duration="5000" data-intro="true">
+    <div class="intro-bg"></div>
+    <div class="intro-glow"></div>
+    <img class="intro-logo" src="https://static.cdnlogo.com/logos/s/65/sky-news.svg" alt="Sky News">
+    <div class="intro-line"></div>
+    <span class="intro-label">Headlines</span>
+  </div>
+
+  <div class="slide sky-accent" id="sky-0" data-duration="10000">
+    <img class="news-bg-full" id="sky-img-0" src="" alt="">
+    <div class="news-gradient news-gradient-bottom"></div>
+    <div class="news-gradient news-gradient-vignette"></div>
+    <div class="news-content">
+      <div class="news-source-bar">
+        <img class="source-logo" src="https://static.cdnlogo.com/logos/s/65/sky-news.svg" alt="Sky News">
+        <span class="news-ago" id="sky-ago-0"></span>
+      </div>
+      <h1 class="news-title" id="sky-title-0"></h1>
+      <div class="news-desc-area" id="sky-desc-area-0"><p id="sky-desc-0"></p></div>
+    </div>
+  </div>
+
+  <div class="slide sky-accent" id="sky-1" data-duration="10000">
+    <img class="news-bg-full" id="sky-img-1" src="" alt="">
+    <div class="news-gradient news-gradient-bottom"></div>
+    <div class="news-gradient news-gradient-vignette"></div>
+    <div class="news-content">
+      <div class="news-source-bar">
+        <img class="source-logo" src="https://static.cdnlogo.com/logos/s/65/sky-news.svg" alt="Sky News">
+        <span class="news-ago" id="sky-ago-1"></span>
+      </div>
+      <h1 class="news-title" id="sky-title-1"></h1>
+      <div class="news-desc-area" id="sky-desc-area-1"><p id="sky-desc-1"></p></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function timeAgo(d) {
+  const s = Math.floor((Date.now() - new Date(d).getTime()) / 1000);
+  if (s < 60) return 'Just now';
+  if (s < 3600) return Math.floor(s / 60) + 'm ago';
+  if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+  return Math.floor(s / 86400) + 'd ago';
+}
+
+const PH = 'data:image/svg+xml,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080"><rect fill="#111" width="1920" height="1080"/></svg>'
+);
+
+function parseRSSItems(xml) {
+  const doc = new DOMParser().parseFromString(xml, 'text/xml');
+  return Array.from(doc.querySelectorAll('item')).map(item => {
+    const get = tag => item.querySelector(tag)?.textContent || '';
+    let img = '';
+    const media = item.querySelector('content[url], thumbnail[url]');
+    if (media) img = media.getAttribute('url');
+    if (!img) { const enc = item.querySelector('enclosure[url]'); if (enc && (enc.getAttribute('type') || '').startsWith('image')) img = enc.getAttribute('url'); }
+    if (!img) { const m = get('description').match(/<img[^>]+src="([^"]+)"/); if (m) img = m[1]; }
+    const tmp = document.createElement('div'); tmp.innerHTML = get('description');
+    return { title: get('title'), description: tmp.textContent || '', pubDate: get('pubDate'), image: img };
+  });
+}
+
+async function fetchRSS(url) {
+  try {
+    const resp = await fetch('https://corsproxy.io/?' + encodeURIComponent(url));
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const xml = await resp.text();
+    const items = parseRSSItems(xml);
+    if (items.length) return items;
+  } catch (e) { console.warn('corsproxy failed:', e.message); }
+  try {
+    const resp = await fetch('https://api.rss2json.com/v1/api.json?count=10&rss_url=' + encodeURIComponent(url));
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    if (data.items?.length) {
+      return data.items.map(item => {
+        const tmp = document.createElement('div'); tmp.innerHTML = item.description;
+        return { title: item.title, description: tmp.textContent || '', pubDate: item.pubDate,
+          image: item.thumbnail || item.enclosure?.link || (() => { const m = item.description?.match(/<img[^>]+src="([^"]+)"/); return m ? m[1] : ''; })() };
+      });
+    }
+  } catch (e) { console.warn('rss2json failed:', e.message); }
+  return [];
+}
+
+async function fetchNews(url, pre, n) {
+  try {
+    const items = await fetchRSS(url);
+    if (!items.length) return;
+    items.slice(0, n).forEach((item, i) => {
+      const el = id => document.getElementById(pre + '-' + id + '-' + i);
+      const title = el('title'), desc = el('desc'), img = el('img'), ago = el('ago');
+      if (title) title.textContent = item.title;
+      if (ago) { ago.textContent = timeAgo(item.pubDate); ago.dataset.pubdate = item.pubDate; }
+      if (desc) desc.textContent = item.description;
+      if (img) img.src = item.image || PH;
+    });
+  } catch (e) { console.warn('News err:', e); }
+}
+
+function startScroll(slideEl) {
+  const area = slideEl.querySelector('.news-desc-area');
+  if (!area) return;
+  const p = area.querySelector('p'); if (!p) return;
+  p.style.transition = 'none'; p.style.transform = 'translateY(0)'; void p.offsetHeight;
+  const ov = p.scrollHeight - area.clientHeight;
+  if (ov > 10) { setTimeout(() => { p.style.transition = 'transform ' + (ov / 28) + 's linear'; p.style.transform = 'translateY(-' + ov + 'px)'; }, 3500); }
+}
+
+function preloadImage(src) {
+  return new Promise(resolve => {
+    if (!src || src === PH) return resolve();
+    const img = new Image(); img.onload = resolve; img.onerror = resolve; img.src = src;
+    setTimeout(resolve, 8000);
+  });
+}
+
+const allSlides = [document.getElementById('intro-sky'), document.getElementById('sky-0'), document.getElementById('sky-1')];
+let cur = 0, timer = null;
+
+function activateSlide(i, instant) {
+  const next = allSlides[i];
+  if (instant) next.classList.add('instant');
+  next.classList.add('active'); cur = i;
+  const newBg = next.querySelector('.news-bg-full');
+  if (newBg) { newBg.style.transition = 'none'; newBg.style.transform = 'scale(1)';
+    requestAnimationFrame(() => requestAnimationFrame(() => { newBg.style.transition = 'transform 12s ease-out'; newBg.style.transform = 'scale(1.08)';
+      if (instant) next.classList.remove('instant'); })); }
+  if (!next.dataset.intro) startScroll(next);
+  const ago = next.querySelector('.news-ago');
+  if (ago?.dataset.pubdate) ago.textContent = timeAgo(ago.dataset.pubdate);
+  const dur = parseInt(next.dataset.duration) || 10000;
+  clearTimeout(timer);
+  if (i < allSlides.length - 1) { timer = setTimeout(() => showSlide(i + 1), dur); }
+}
+
+function deactivateSlide(i, instant) {
+  const s = allSlides[i];
+  if (instant) {
+    s.classList.add('instant-out'); s.classList.remove('active');
+    setTimeout(() => s.classList.remove('instant-out'), 50);
+  } else {
+    s.classList.remove('active'); s.classList.add('prev');
+    setTimeout(() => { s.classList.remove('prev'); const bg = s.querySelector('.news-bg-full'); if (bg) { bg.style.transition = 'none'; bg.style.transform = 'scale(1)'; } }, 2600);
+  }
+}
+
+function showSlide(i) {
+  const prev = allSlides[cur];
+  const isFromIntro = prev && prev.dataset.intro;
+  deactivateSlide(cur, isFromIntro);
+  activateSlide(i, isFromIntro);
+}
+
+const loadingScreen = document.getElementById('loading-screen');
+
+function waitForVisible() {
+  return new Promise(resolve => {
+    if (document.visibilityState === 'visible') return resolve();
+    const handler = () => {
+      if (document.visibilityState === 'visible') {
+        document.removeEventListener('visibilitychange', handler);
+        resolve();
+      }
+    };
+    document.addEventListener('visibilitychange', handler);
+  });
+}
+
+async function initSignage() {
+  await fetchNews('https://feeds.skynews.com/feeds/rss/world.xml', 'sky', 2);
+  document.getElementById('ll').classList.add('loaded');
+  await Promise.all(Array.from(document.querySelectorAll('.news-bg-full')).map(img => preloadImage(img.src)));
+  await waitForVisible();
+  await new Promise(r => setTimeout(r, 300));
+  loadingScreen.classList.add('fade-out');
+  await new Promise(r => setTimeout(r, 800));
+  loadingScreen.style.display = 'none';
+  activateSlide(0);
+}
+
+initSignage();
+</script>
+</body>
+</html>

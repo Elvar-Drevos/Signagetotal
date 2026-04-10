@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vandaag in de Geschiedenis</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; width: 100%; }
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
+            color: #fff;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .container { padding: 3vh 3vw; height: 100vh; display: flex; flex-direction: column; }
+        .header { text-align: center; margin-bottom: 3vh; }
+        .date-display { font-size: clamp(18px, 2vw, 32px); opacity: 0.9; margin-bottom: 1.5vh; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 300; }
+        h1 { font-size: clamp(32px, 4.5vw, 72px); font-weight: 700; margin-bottom: 1vh; text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.4); }
+        .subtitle { font-size: clamp(16px, 1.8vw, 28px); opacity: 0.85; font-style: italic; }
+        .featured-event { background: rgba(255, 255, 255, 0.18); backdrop-filter: blur(15px); border-radius: 24px; padding: clamp(30px, 3vh, 50px) clamp(40px, 4vw, 60px); margin-bottom: 2.5vh; border: 2px solid rgba(255, 255, 255, 0.3); box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4); }
+        .featured-label { font-size: clamp(14px, 1.2vw, 18px); text-transform: uppercase; letter-spacing: 0.2em; opacity: 0.8; margin-bottom: 2vh; color: #fbbf24; font-weight: 600; }
+        .featured-year { font-size: clamp(40px, 5vw, 80px); font-weight: bold; margin-bottom: 2vh; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .featured-description { font-size: clamp(20px, 2.2vw, 36px); line-height: 1.6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-weight: 400; }
+        .other-events { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(15px, 1.5vw, 25px); flex: 1; }
+        .mini-event { background: rgba(255, 255, 255, 0.12); backdrop-filter: blur(10px); border-radius: 16px; padding: clamp(15px, 2vh, 25px); border-left: 5px solid; display: flex; flex-direction: column; }
+        .mini-event.ancient { border-color: #fbbf24; }
+        .mini-event.modern { border-color: #60a5fa; }
+        .mini-event.recent { border-color: #34d399; }
+        .mini-event.birthday { border-color: #f472b6; }
+        .mini-year { font-size: clamp(18px, 1.8vw, 28px); font-weight: bold; margin-bottom: 1vh; opacity: 0.95; }
+        .mini-description { font-size: clamp(14px, 1.2vw, 18px); line-height: 1.5; opacity: 0.9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; flex: 1; }
+        .mini-category { font-size: clamp(28px, 2.5vw, 42px); margin-bottom: 1vh; font-weight: bold; opacity: 0.95; text-shadow: 1px 1px 2px rgba(0,0,0,0.3); }
+        .special-day { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); padding: clamp(15px, 2vh, 25px) clamp(20px, 3vw, 40px); border-radius: 16px; margin-top: 2vh; text-align: center; box-shadow: 0 8px 20px rgba(251, 191, 36, 0.3); display: none; }
+        .special-day.visible { display: block; }
+        .special-day-label { font-size: clamp(14px, 1.2vw, 18px); text-transform: uppercase; letter-spacing: 0.15em; opacity: 0.9; margin-bottom: 0.5vh; font-weight: 600; color: rgba(0, 0, 0, 0.7); }
+        .special-day-name { font-size: clamp(22px, 2.5vw, 38px); font-weight: bold; color: #1e3c72; text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5); }
+        .footer { text-align: center; margin-top: 2vh; padding-top: 2vh; opacity: 0.6; font-size: clamp(12px, 1vw, 16px); display: flex; justify-content: center; align-items: center; gap: 2vw; }
+        .rotation-indicator { display: flex; gap: 8px; align-items: center; }
+        .dot { width: clamp(8px, 0.8vw, 12px); height: clamp(8px, 0.8vw, 12px); border-radius: 50%; background: rgba(255, 255, 255, 0.3); }
+        .dot.active { background: #fbbf24; transform: scale(1.3); }
+        .loading-state { display: flex; align-items: center; justify-content: center; flex: 1; flex-direction: column; gap: 2vh; }
+        .loading-spinner { width: 5vh; height: 5vh; border: 0.3vh solid rgba(255,255,255,0.2); border-top-color: #fbbf24; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { font-size: clamp(16px, 1.5vw, 24px); opacity: 0.7; }
+        @media (max-width: 1200px) { .other-events { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 768px) { .other-events { grid-template-columns: 1fr; } }
+        @media (max-height: 600px) { .container { padding: 2vh 2vw; } .header { margin-bottom: 2vh; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="date-display" id="currentDate"></div>
+            <h1>Vandaag in de Geschiedenis</h1>
+            <div class="subtitle">De belangrijkste gebeurtenissen op deze dag</div>
+        </div>
+        <div id="mainContent">
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Historische gebeurtenissen laden...</div>
+            </div>
+        </div>
+        <div class="special-day" id="specialDay">
+            <div class="special-day-label">Vandaag is het ook...</div>
+            <div class="special-day-name" id="specialDayName"></div>
+        </div>
+        <div class="footer">
+            <div>Bron: Wikipedia - Automatisch bijgewerkt</div>
+            <div class="rotation-indicator" id="rotationIndicator"></div>
+        </div>
+    </div>
+    <script>
+// ====== SPECIAL DAYS (kept from original) ======
+const specialDays = {
+    // Januari
+    "1-1": "Nieuwjaarsdag",
+    "1-4": "Wereld Braille Dag",
+    "1-6": "Driekoningen",
+    "1-7": "Orthodoxe Kerst",
+    "1-10": "Nationale Bitterballendag",
+    "1-13": "Wereld Slaap Dag",
+    "1-17": "Blauwe Maandag",
+    "1-20": "Nationale Knuffeldag",
+    "1-21": "Internationale Dag van de Jogginbroek",
+    "1-24": "Internationale Dag van het Onderwijs",
+    "1-25": "Tegenovergestelde Dag",
+    "1-26": "Internationale Dag voor Schone Energie",
+    "1-27": "Internationale Holocaustherdenkingsdag",
+    "1-28": "Internationale Dag van Gegevensbescherming",
+    // Februari
+    "2-2": "Wereld Wetlands Dag",
+    "2-4": "Wereld Kanker Dag",
+    "2-6": "Internationale Dag tegen Genitale Verminking",
+    "2-9": "Wereld Epilepsie Dag",
+    "2-10": "Nationale Thuiswerkdag",
+    "2-11": "Internationale Dag van Vrouwen in de Wetenschap",
+    "2-12": "Internationale Dag van Kindersoldaten",
+    "2-13": "Wereld Radio Dag",
+    "2-14": "Valentijnsdag",
+    "2-17": "Dag van de Spontane Vriendelijkheid",
+    "2-20": "Wereld Dag van Sociale Rechtvaardigheid",
+    "2-21": "Internationale Moedertaaldag",
+    "2-27": "Internationale IJsberendag",
+    // Maart
+    "3-1": "Nationale Complimentendag",
+    "3-3": "Wereld Wildlife Dag / Wereld Gehoordag",
+    "3-8": "Internationale Vrouwendag",
+    "3-14": "Pi Dag (3.14)",
+    "3-15": "Wereld Consumentenrechten Dag",
+    "3-17": "St. Patrick's Day",
+    "3-20": "Internationale Dag van het Geluk / Lente-equinox",
+    "3-21": "Wereld Poezie Dag / Wereld Downsyndroomdag",
+    "3-22": "Wereld Water Dag",
+    "3-23": "Wereld Meteorologie Dag",
+    "3-24": "Wereld Tuberculose Dag",
+    "3-25": "Herdenkingsdag Slachtoffers van Slavernij",
+    "3-27": "Wereld Theater Dag",
+    // April
+    "4-1": "1 April (Gekkendag)",
+    "4-2": "Wereld Autismedag / Internationale Kinderboeken Dag",
+    "4-4": "Internationale Dag tegen Landmijnen",
+    "4-6": "Internationale Sportdag voor Ontwikkeling en Vrede",
+    "4-7": "Wereld Gezondheidsdag",
+    "4-11": "Wereld Parkinson Dag",
+    "4-12": "Internationale Dag van de Bemande Ruimtevaart",
+    "4-14": "Nationale Grieks-Gyrosdag",
+    "4-15": "Wereld Kunst Dag",
+    "4-16": "Wereld Stemdag",
+    "4-17": "Wereld Hemofilie Dag",
+    "4-18": "Internationale Dag voor Monumenten",
+    "4-22": "Dag van de Aarde",
+    "4-23": "Wereld Boeken Dag",
+    "4-25": "Wereld Malaria Dag",
+    "4-26": "Wereld Dag van Intellectueel Eigendom / Tsjernobylherdenking",
+    "4-27": "Koningsdag",
+    "4-28": "Wereld Dag voor Veiligheid op het Werk",
+    "4-29": "Internationale Dansdag",
+    "4-30": "Internationale Jazzdag",
+    // Mei
+    "5-1": "Dag van de Arbeid",
+    "5-2": "Wereld Tonijndag",
+    "5-3": "Wereld Persvrijheidsdag",
+    "5-4": "Dodenherdenking",
+    "5-5": "Bevrijdingsdag",
+    "5-8": "Wereld Rode Kruis Dag",
+    "5-9": "Dag van Europa",
+    "5-10": "Wereld Lupus Dag",
+    "5-12": "Internationale Dag van de Verpleegkundige",
+    "5-15": "Internationale Dag van het Gezin",
+    "5-17": "Wereld Telecommunicatie Dag / IDAHOBIT",
+    "5-18": "Internationale Museumdag",
+    "5-20": "Wereld Bijendag",
+    "5-21": "Wereld Dag voor Culturele Diversiteit",
+    "5-22": "Internationale Dag van de Biodiversiteit",
+    "5-23": "Wereld Schildpaddag",
+    "5-25": "Handdoekdag / Wereld Schildklier Dag",
+    "5-28": "Nationale Hamburgerdag",
+    "5-29": "Internationale Dag van de VN-Vredeshandhavers",
+    "5-31": "Wereld Niet-Roken Dag",
+    // Juni
+    "6-1": "Internationale Dag van het Kind / Wereld Melkdag",
+    "6-3": "Wereld Fietsdag",
+    "6-5": "Wereld Milieu Dag",
+    "6-7": "Wereld Voedselveiligheidsdag",
+    "6-8": "Wereld Oceaan Dag",
+    "6-12": "Wereld Dag tegen Kinderarbeid",
+    "6-13": "Internationale Albinismedag",
+    "6-14": "Wereld Bloeddonor Dag",
+    "6-15": "Wereld Dag tegen Ouderenmishandeling",
+    "6-16": "Internationale Dag van de Afrikaanse Schrijver",
+    "6-17": "Wereld Dag tegen Woestijnvorming",
+    "6-19": "Juneteenth - Einde Slavernij VS",
+    "6-20": "Wereld Vluchtelingen Dag",
+    "6-21": "Langste Dag / Wereld Muziekdag / Internationale Yogadag",
+    "6-23": "Internationale Dag van de Weduwe / Dag van de Ambtenaar",
+    "6-25": "Wereld Zeemansdag",
+    "6-26": "Internationale Dag tegen Drugsmisbruik",
+    "6-30": "Internationale Asteroiden Dag",
+    // Juli
+    "7-1": "Internationale Grap Dag",
+    "7-2": "Wereld UFO Dag",
+    "7-4": "Amerikaanse Onafhankelijkheidsdag",
+    "7-6": "Internationale Kus Dag",
+    "7-7": "Wereld Chocolade Dag",
+    "7-11": "Wereld Bevolking Dag",
+    "7-15": "Wereld Jongerenvaardigheden Dag",
+    "7-17": "Wereld Emoji Dag",
+    "7-18": "Nelson Mandela Internationale Dag",
+    "7-20": "Internationale Schaakdag / Maanlanding (1969)",
+    "7-26": "Internationale Mangrovedag",
+    "7-28": "Wereld Hepatitis Dag",
+    "7-29": "Internationale Tijgerdag",
+    "7-30": "Internationale Dag van de Vriendschap",
+    // Augustus
+    "8-1": "Wereld Moedermelkdag",
+    "8-8": "Internationale Kattendag",
+    "8-9": "Internationale Dag van Inheemse Volkeren",
+    "8-10": "Wereld Leeuwendag",
+    "8-12": "Internationale Jeugd Dag / Wereld Olifantendag",
+    "8-13": "Internationale Linkshandigen Dag",
+    "8-15": "VJ-Day (Einde WO2 Azie)",
+    "8-19": "Wereld Fotografie Dag / Wereld Humanitaire Dag",
+    "8-21": "Internationale Dag van Herinnering aan Slavernij",
+    "8-23": "Internationale Dag tegen de Slavenhandel",
+    "8-26": "Internationale Hondendag",
+    "8-29": "Internationale Dag tegen Nucleaire Testen",
+    "8-31": "Internationale Dag van Afro-afstammelingen",
+    // September
+    "9-1": "Nationale Koffiedag (NL)",
+    "9-5": "Internationale Dag van de Liefdadigheid",
+    "9-7": "Internationale Dag van Schone Lucht",
+    "9-8": "Wereldalfabetiseringsdag",
+    "9-9": "Internationale Dag ter Bescherming van Onderwijs",
+    "9-10": "Wereld Zelfmoordpreventie Dag",
+    "9-12": "Internationale Dag van de Zuid-Zuidsamenwerking",
+    "9-13": "Internationale Chocoladedag",
+    "9-15": "Internationale Dag van de Democratie",
+    "9-16": "Internationale Dag voor Behoud van de Ozonlaag",
+    "9-17": "Wereld Patientveiligheidsdag",
+    "9-19": "Internationale Praat Als Een Piraat Dag",
+    "9-21": "Internationale Dag van de Vrede",
+    "9-23": "Internationale Dag van de Gebarentaal",
+    "9-25": "Wereld Dromendag",
+    "9-26": "Europese Dag van de Talen / Wereld Anti-Doping Dag",
+    "9-27": "Wereld Toerisme Dag",
+    "9-28": "Internationale Dag voor Toegang tot Informatie",
+    "9-29": "Wereld Hart Dag / Internationale Dag tegen Voedselverspilling",
+    "9-30": "Internationale Vertaaldag",
+    // Oktober
+    "10-1": "Internationale Dag van de Ouderen / Internationale Koffiedag",
+    "10-2": "Internationale Dag van Geweldloosheid",
+    "10-4": "Dierendag",
+    "10-5": "Wereld Lerarendag",
+    "10-9": "Wereld Post Dag",
+    "10-10": "Wereld Geestelijke Gezondheidsdag",
+    "10-11": "Internationale Dag van het Meisje / Nationale Coming-Outdag",
+    "10-13": "Internationale Dag voor Rampenrisicovermindering",
+    "10-15": "Internationale Dag van de Plattelandsvrouw",
+    "10-16": "Wereld Voedsel Dag / Wereld Brooddag",
+    "10-17": "Internationale Dag voor Uitroeiing van Armoede",
+    "10-20": "Wereld Statistiekdag",
+    "10-24": "Verenigde Naties Dag",
+    "10-25": "Wereld Pasta Dag",
+    "10-27": "Wereld Audiovisueel Erfgoed Dag",
+    "10-29": "Wereld Beroerte Dag",
+    "10-31": "Halloween",
+    // November
+    "11-1": "Wereldveganismedag",
+    "11-2": "Internationale Dag om een Einde te maken aan Straffeloosheid",
+    "11-5": "Wereld Tsunami Bewustzijnsdag",
+    "11-6": "Internationale Dag ter Voorkoming van Milieu-exploitatie",
+    "11-8": "Internationale Dag van de Radiologie",
+    "11-9": "Herdenking Val van de Berlijnse Muur (1989)",
+    "11-10": "Wereld Wetenschapsdag voor Vrede en Ontwikkeling",
+    "11-11": "Sint-Maarten / Wapenstilstandsdag (1918)",
+    "11-13": "Wereld Vriendelijkheidsdag",
+    "11-14": "Wereld Diabetes Dag",
+    "11-16": "Internationale Dag voor Tolerantie",
+    "11-17": "Internationale Studenten Dag",
+    "11-19": "Wereld Toilet Dag / Internationale Mannendag",
+    "11-20": "Universele Kinderrechten Dag",
+    "11-21": "Wereld Televisie Dag",
+    "11-25": "Internationale Dag tegen Geweld tegen Vrouwen",
+    "11-29": "Internationale Solidariteit met Palestijns Volk Dag",
+    // December
+    "12-1": "Wereld AIDS Dag",
+    "12-2": "Internationale Dag voor de Afschaffing van Slavernij",
+    "12-3": "Internationale Dag van Personen met een Handicap",
+    "12-4": "Internationale Dag van de Banken",
+    "12-5": "Sinterklaas / Wereld Bodem Dag / Internationale Vrijwilligersdag",
+    "12-7": "Internationale Dag van de Burgerluchtvaart",
+    "12-9": "Internationale Anti-Corruptie Dag",
+    "12-10": "Dag van de Rechten van de Mens / Nobelprijsuitreiking",
+    "12-11": "Internationale Bergendag",
+    "12-12": "Internationale Dag van Universele Gezondheidszorg",
+    "12-15": "Koninkrijksdag",
+    "12-18": "Internationale Migranten Dag",
+    "12-20": "Internationale Dag van de Menselijke Solidariteit",
+    "12-21": "Kortste Dag van het Jaar / Winterzonnewende",
+    "12-24": "Kerstavond",
+    "12-25": "1e Kerstdag",
+    "12-26": "2e Kerstdag",
+    "12-27": "Internationale Dag van Epidemische Paraatheid",
+    "12-31": "Oudejaarsavond"
+};
+
+// ====== CATEGORY ICONS (no emoji - Pi Chromium safe) ======
+const categoryIcons = ['*', '+', '#', '~', '^', '>', '<'];
+
+// ====== STATE ======
+let allEvents = [];
+let currentRotation = 0;
+let rotationInterval = null;
+
+// ====== DATE ======
+function updateDate() {
+    const now = new Date();
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('currentDate').textContent =
+        now.toLocaleDateString('nl-NL', options);
+    return (now.getMonth() + 1) + '-' + now.getDate();
+}
+
+// ====== ERA CLASSIFICATION ======
+function getEra(year) {
+    if (year < 0) return 'ancient';
+    if (year < 1500) return 'ancient';
+    if (year < 1800) return 'modern';
+    if (year < 1950) return 'modern';
+    return 'recent';
+}
+
+function getCategorySymbol(era) {
+    switch (era) {
+        case 'ancient': return '&#9670;';  // diamond
+        case 'modern': return '&#9733;';   // star
+        case 'recent': return '&#9679;';   // circle
+        case 'birthday': return '&#9734;'; // open star
+        default: return '&#9670;';
+    }
+}
+
+// ====== FETCH FROM WIKIPEDIA API ======
+async function fetchWikipediaEvents(month, day) {
+    const mm = String(month).padStart(2, '0');
+    const dd = String(day).padStart(2, '0');
+
+    // Try English Wikipedia first (more events), then Dutch
+    const urls = [
+        'https://en.wikipedia.org/api/rest_v1/feed/onthisday/events/' + mm + '/' + dd,
+        'https://en.wikipedia.org/api/rest_v1/feed/onthisday/births/' + mm + '/' + dd,
+    ];
+
+    let events = [];
+    let births = [];
+
+    try {
+        const [evResp, brResp] = await Promise.allSettled([
+            fetch(urls[0], { headers: { 'Api-User-Agent': 'YodeckHistoryDisplay/1.0' } }),
+            fetch(urls[1], { headers: { 'Api-User-Agent': 'YodeckHistoryDisplay/1.0' } }),
+        ]);
+
+        if (evResp.status === 'fulfilled' && evResp.value.ok) {
+            const data = await evResp.value.json();
+            if (data.events) {
+                events = data.events.map(function(e) {
+                    return {
+                        year: e.year || 0,
+                        description: e.text || '',
+                        era: getEra(e.year || 0),
+                        category: getCategorySymbol(getEra(e.year || 0)),
+                        type: 'event'
+                    };
+                });
+            }
+        }
+
+        if (brResp.status === 'fulfilled' && brResp.value.ok) {
+            const data = await brResp.value.json();
+            if (data.births) {
+                births = data.births
+                    .filter(function(b) {
+                        // Only include notable births (those with pages)
+                        return b.pages && b.pages.length > 0;
+                    })
+                    .map(function(b) {
+                        return {
+                            year: b.year || 0,
+                            description: b.text || '',
+                            era: 'birthday',
+                            category: '&#9734;',
+                            type: 'birthday'
+                        };
+                    });
+            }
+        }
+    } catch (err) {
+        console.error('Wikipedia API error:', err);
+    }
+
+    // Mix: pick ~12 notable events and ~4 notable births
+    // Sort events by significance (Wikipedia puts most notable first)
+    var selectedEvents = events.slice(0, 14);
+    var selectedBirths = births.slice(0, 6);
+
+    // Interleave: every 4th item is a birthday
+    var mixed = [];
+    var ei = 0, bi = 0;
+    while (ei < selectedEvents.length || bi < selectedBirths.length) {
+        // Add 3 events
+        for (var k = 0; k < 3 && ei < selectedEvents.length; k++) {
+            mixed.push(selectedEvents[ei++]);
+        }
+        // Add 1 birthday
+        if (bi < selectedBirths.length) {
+            mixed.push(selectedBirths[bi++]);
+        }
+    }
+
+    return mixed;
+}
+
+// ====== DISPLAY ======
+function displayEvents() {
+    var mainContent = document.getElementById('mainContent');
+
+    if (allEvents.length === 0) {
+        mainContent.innerHTML = '<div class="loading-state"><div class="loading-text">Geen gebeurtenissen gevonden voor vandaag</div></div>';
+        return;
+    }
+
+    var startIndex = currentRotation * 4;
+    var currentEvents = allEvents.slice(startIndex, startIndex + 4);
+
+    if (currentEvents.length === 0) {
+        currentRotation = 0;
+        currentEvents = allEvents.slice(0, 4);
+    }
+
+    var featuredEvent = currentEvents[0];
+    var otherEvents = currentEvents.slice(1);
+
+    var yearDisplay = featuredEvent.year;
+    if (yearDisplay < 0) yearDisplay = Math.abs(yearDisplay) + ' v.Chr.';
+
+    var featLabel = featuredEvent.type === 'birthday' ?
+        '&#9734; Geboren op deze dag' : '&#9733; Hoogtepunt van de dag';
+
+    var html = '<div class="featured-event">' +
+        '<div class="featured-label">' + featLabel + '</div>' +
+        '<div class="featured-year">' + yearDisplay + '</div>' +
+        '<div class="featured-description">' + escHtml(featuredEvent.description) + '</div>' +
+        '</div>';
+
+    if (otherEvents.length > 0) {
+        html += '<div class="other-events">';
+        otherEvents.forEach(function(event) {
+            var yr = event.year;
+            if (yr < 0) yr = Math.abs(yr) + ' v.Chr.';
+
+            html += '<div class="mini-event ' + event.era + '">' +
+                '<div class="mini-category">' + event.category + '</div>' +
+                '<div class="mini-year">' + yr + '</div>' +
+                '<div class="mini-description">' + escHtml(event.description) + '</div>' +
+                '</div>';
+        });
+        html += '</div>';
+    }
+
+    mainContent.innerHTML = html;
+    updateRotationIndicator();
+}
+
+function escHtml(s) {
+    if (!s) return '';
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+function updateRotationIndicator() {
+    var totalRotations = Math.ceil(allEvents.length / 4);
+    var indicator = document.getElementById('rotationIndicator');
+    var html = '';
+    for (var i = 0; i < totalRotations; i++) {
+        html += '<div class="dot' + (i === currentRotation ? ' active' : '') + '"></div>';
+    }
+    indicator.innerHTML = html;
+}
+
+function rotateEvents() {
+    var totalRotations = Math.ceil(allEvents.length / 4);
+    currentRotation = (currentRotation + 1) % totalRotations;
+    displayEvents();
+}
+
+// ====== SPECIAL DAY ======
+function checkSpecialDay(dateKey) {
+    var specialDayEl = document.getElementById('specialDay');
+    var specialDayName = document.getElementById('specialDayName');
+    if (specialDays[dateKey]) {
+        specialDayName.textContent = specialDays[dateKey];
+        specialDayEl.classList.add('visible');
+    } else {
+        specialDayEl.classList.remove('visible');
+    }
+}
+
+// ====== SHUFFLE ======
+function shuffleArray(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+}
+
+// ====== INIT ======
+async function init() {
+    var dateKey = updateDate();
+    checkSpecialDay(dateKey);
+
+    var parts = dateKey.split('-');
+    var month = parseInt(parts[0], 10);
+    var day = parseInt(parts[1], 10);
+
+    // Fetch from Wikipedia
+    allEvents = await fetchWikipediaEvents(month, day);
+
+    // Shuffle for variety
+    allEvents = shuffleArray(allEvents);
+
+    currentRotation = 0;
+    displayEvents();
+
+    // Rotate every 30 seconds
+    if (rotationInterval) clearInterval(rotationInterval);
+    rotationInterval = setInterval(rotateEvents, 30000);
+
+    // Schedule midnight refresh
+    var now = new Date();
+    var tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    var msUntilMidnight = tomorrow - now;
+
+    setTimeout(function() {
+        init(); // Re-init at midnight
+        // Then every 24h
+        setInterval(init, 24 * 60 * 60 * 1000);
+    }, msUntilMidnight);
+}
+
+init();
+    </script>
+</body>
+</html>

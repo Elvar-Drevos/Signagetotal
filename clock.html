@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wereldklok — Zwolle</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#0a0e17;
+    --surface:rgba(255,255,255,0.04);
+    --surface-hover:rgba(255,255,255,0.07);
+    --border:rgba(255,255,255,0.08);
+    --text:#e8eaf0;
+    --text-dim:rgba(255,255,255,0.45);
+    --accent:#ff7b2e;
+    --accent-glow:rgba(255,123,46,0.25);
+    --blue:#4ea8de;
+    --green:#6ecf8a;
+    --purple:#b388ff;
+    --pink:#f48fb1;
+  }
+  html,body{height:100%;overflow:hidden;font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text)}
+
+  /* Animated background */
+  body::before{
+    content:'';position:fixed;inset:0;z-index:0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 30%, rgba(78,168,222,0.06) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 50% at 80% 70%, rgba(255,123,46,0.05) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 40% at 50% 50%, rgba(179,136,255,0.04) 0%, transparent 70%);
+    animation:bgPulse 20s ease-in-out infinite alternate;
+  }
+  @keyframes bgPulse{
+    0%{opacity:1;filter:hue-rotate(0deg)}
+    100%{opacity:.7;filter:hue-rotate(15deg)}
+  }
+
+  .container{
+    position:relative;z-index:1;
+    height:100vh;width:100vw;
+    display:flex;flex-direction:column;
+    padding:clamp(1.5rem,3vh,3rem);
+    gap:clamp(1rem,2vh,2rem);
+  }
+
+  /* Header */
+  .header{
+    display:flex;align-items:center;gap:1rem;
+    padding-bottom:clamp(.5rem,1vh,1rem);
+    border-bottom:1px solid var(--border);
+  }
+  .header .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);
+    box-shadow:0 0 12px var(--accent-glow);animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .header .label{font-size:clamp(.7rem,1.2vw,.95rem);text-transform:uppercase;letter-spacing:.15em;color:var(--text-dim);font-weight:600}
+  .header .date-str{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.1vw,.85rem);color:var(--text-dim);font-weight:300}
+
+  /* Main clock area */
+  .main-area{
+    flex:1;display:flex;flex-direction:column;
+    justify-content:center;align-items:center;
+    gap:clamp(.5rem,1.5vh,1.5rem);
+  }
+
+  .location-badge{
+    display:inline-flex;align-items:center;gap:.5rem;
+    background:var(--surface);border:1px solid var(--border);
+    padding:.4em 1.2em;border-radius:100px;
+    font-size:clamp(.7rem,1.3vw,1rem);color:var(--text-dim);
+    backdrop-filter:blur(10px);
+  }
+  .location-badge svg{width:14px;height:14px;fill:var(--accent);flex-shrink:0}
+
+  .main-time{
+    font-family:'JetBrains Mono',monospace;
+    font-size:clamp(4rem,15vw,14rem);
+    font-weight:400;letter-spacing:-.02em;
+    line-height:1;
+    background:linear-gradient(180deg,#fff 0%,rgba(255,255,255,.65) 100%);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    background-clip:text;
+    text-shadow:0 0 80px rgba(255,255,255,.08);
+    position:relative;
+  }
+  .main-time .seconds{
+    font-size:.35em;color:var(--accent);
+    -webkit-text-fill-color:var(--accent);
+    vertical-align:super;margin-left:.1em;
+    font-weight:300;
+  }
+
+  .main-label{
+    font-size:clamp(1rem,2.5vw,2rem);
+    font-weight:300;color:var(--text-dim);
+    letter-spacing:.05em;
+  }
+  .main-label span{color:var(--accent);font-weight:600}
+
+  /* World clocks grid */
+  .world-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:clamp(.8rem,1.5vw,1.5rem);
+    width:100%;
+    margin-top:auto;
+  }
+
+  .world-card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:clamp(12px,1.5vw,20px);
+    padding:clamp(1rem,2vw,2rem);
+    backdrop-filter:blur(10px);
+    transition:all .4s cubic-bezier(.25,.8,.25,1);
+    position:relative;overflow:hidden;
+  }
+  .world-card::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:2px;
+    border-radius:2px 2px 0 0;
+    opacity:.8;
+  }
+  .world-card:nth-child(1)::before{background:var(--blue)}
+  .world-card:nth-child(2)::before{background:var(--green)}
+  .world-card:nth-child(3)::before{background:var(--purple)}
+
+  .world-card:hover{
+    background:var(--surface-hover);
+    border-color:rgba(255,255,255,.12);
+    transform:translateY(-2px);
+  }
+
+  .wc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:clamp(.4rem,.8vh,.8rem)}
+  .wc-city{font-size:clamp(.75rem,1.4vw,1.15rem);font-weight:600;letter-spacing:.02em}
+  .wc-flag{font-size:clamp(1rem,1.8vw,1.5rem)}
+  .wc-time{
+    font-family:'JetBrains Mono',monospace;
+    font-size:clamp(1.5rem,4vw,3.2rem);
+    font-weight:400;line-height:1.1;
+    margin-bottom:clamp(.2rem,.5vh,.5rem);
+  }
+  .world-card:nth-child(1) .wc-time{color:var(--blue)}
+  .world-card:nth-child(2) .wc-time{color:var(--green)}
+  .world-card:nth-child(3) .wc-time{color:var(--purple)}
+
+  .wc-meta{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+  .wc-offset{
+    font-family:'JetBrains Mono',monospace;
+    font-size:clamp(.55rem,1vw,.8rem);
+    color:var(--text-dim);
+    background:rgba(255,255,255,0.05);
+    padding:.15em .5em;border-radius:4px;
+  }
+  .wc-daystate{
+    font-size:clamp(.55rem,1vw,.75rem);
+    color:var(--text-dim);
+    font-weight:300;
+  }
+
+  /* Footer */
+  .footer{
+    display:flex;justify-content:center;
+    padding-top:clamp(.3rem,.5vh,.5rem);
+    border-top:1px solid var(--border);
+  }
+  .footer span{font-size:clamp(.55rem,.9vw,.7rem);color:var(--text-dim);font-weight:300;letter-spacing:.1em;text-transform:uppercase}
+
+  /* Responsive: portrait / small */
+  @media(max-width:600px){
+    .world-grid{grid-template-columns:1fr;gap:.6rem}
+    .world-card{padding:.8rem 1rem}
+    .wc-time{font-size:1.8rem}
+  }
+  @media(min-aspect-ratio:21/9){
+    .main-time{font-size:clamp(4rem,12vh,10rem)}
+    .container{padding:clamp(1rem,2vh,2rem)}
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="dot"></div>
+    <div class="label">Live Klok</div>
+    <div class="date-str" id="dateStr"></div>
+  </div>
+
+  <div class="main-area">
+    <div class="location-badge">
+      <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg>
+      Zwolle, Overijssel
+    </div>
+    <div class="main-time" id="mainTime"></div>
+    <div class="main-label">Centraal-Europese <span>Tijd</span></div>
+  </div>
+
+  <div class="world-grid">
+    <div class="world-card" data-tz="America/New_York" data-city="New York" data-flag="🇺🇸">
+      <div class="wc-header"><span class="wc-city">New York</span><span class="wc-flag">🇺🇸</span></div>
+      <div class="wc-time" id="tz0"></div>
+      <div class="wc-meta"><span class="wc-offset" id="off0"></span><span class="wc-daystate" id="ds0"></span></div>
+    </div>
+    <div class="world-card" data-tz="Asia/Tokyo" data-city="Tokyo" data-flag="🇯🇵">
+      <div class="wc-header"><span class="wc-city">Tokyo</span><span class="wc-flag">🇯🇵</span></div>
+      <div class="wc-time" id="tz1"></div>
+      <div class="wc-meta"><span class="wc-offset" id="off1"></span><span class="wc-daystate" id="ds1"></span></div>
+    </div>
+    <div class="world-card" data-tz="Australia/Sydney" data-city="Sydney" data-flag="🇦🇺">
+      <div class="wc-header"><span class="wc-city">Sydney</span><span class="wc-flag">🇦🇺</span></div>
+      <div class="wc-time" id="tz2"></div>
+      <div class="wc-meta"><span class="wc-offset" id="off2"></span><span class="wc-daystate" id="ds2"></span></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>Automatisch gesynchroniseerd</span>
+  </div>
+</div>
+
+<script>
+const ZWOLLE_TZ = 'Europe/Amsterdam';
+const CITIES = [
+  {tz:'America/New_York', id:0},
+  {tz:'Asia/Tokyo', id:1},
+  {tz:'Australia/Sydney', id:2}
+];
+
+const NL_DAYS = ['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'];
+const NL_MONTHS = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+
+function pad(n){return String(n).padStart(2,'0')}
+
+function getOffsetDiff(tz){
+  const now = new Date();
+  const fmt = (t)=>{
+    const s = now.toLocaleString('en-US',{timeZone:t,hour:'numeric',hour12:false,minute:'numeric'});
+    const [h,m] = s.split(':').map(Number);
+    return h*60+m;
+  };
+  let diff = fmt(tz) - fmt(ZWOLLE_TZ);
+  if(diff > 720) diff -= 1440;
+  if(diff < -720) diff += 1440;
+  const sign = diff >= 0 ? '+' : '';
+  const hrs = Math.floor(Math.abs(diff)/60);
+  const mins = Math.abs(diff)%60;
+  return `UTC${sign}${diff>=0?'':'-'}${hrs}${mins?':'+pad(mins):''}`;
+}
+
+function getDayState(tz){
+  const h = parseInt(new Date().toLocaleString('en-US',{timeZone:tz,hour:'numeric',hour12:false}));
+  if(h >= 6 && h < 12) return 'Ochtend';
+  if(h >= 12 && h < 18) return 'Middag';
+  if(h >= 18 && h < 22) return 'Avond';
+  return 'Nacht';
+}
+
+function update(){
+  const now = new Date();
+
+  // Main time
+  const h = now.toLocaleString('en-US',{timeZone:ZWOLLE_TZ,hour:'2-digit',hour12:false});
+  const m = now.toLocaleString('en-US',{timeZone:ZWOLLE_TZ,minute:'2-digit'});
+  const s = now.toLocaleString('en-US',{timeZone:ZWOLLE_TZ,second:'2-digit'});
+  const hh = pad(parseInt(h));
+  const mm = pad(parseInt(m));
+  const ss = pad(parseInt(s));
+  document.getElementById('mainTime').innerHTML = `${hh}:${mm}<span class="seconds">${ss}</span>`;
+
+  // Date
+  const dayName = NL_DAYS[now.toLocaleString('en-US',{timeZone:ZWOLLE_TZ,weekday:'long'}).toLowerCase()==='sunday'?0:
+    now.toLocaleString('en-US',{timeZone:ZWOLLE_TZ,weekday:'long'}).toLowerCase()==='monday'?1:
+    now.toLocaleString('en-US',{timeZone:ZWOLLE_TZ,weekday:'long'}).toLowerCase()==='tuesday'?2:
+    now.toLocaleString('en-US',{timeZone:ZWOLLE_TZ,weekday:'long'}).toLowerCase()==='wednesday'?3:
+    now.toLocaleString('en-US',{timeZone:ZWOLLE_TZ,weekday:'long'}).toLowerCase()==='thursday'?4:
+    now.toLocaleString('en-US',{timeZone:ZWOLLE_TZ,weekday:'long'}).toLowerCase()==='friday'?5:6];
+  const day = now.toLocaleString('en-US',{timeZone:ZWOLLE_TZ,day:'numeric'});
+  const monthIdx = parseInt(now.toLocaleString('en-US',{timeZone:ZWOLLE_TZ,month:'numeric'}))-1;
+  const year = now.toLocaleString('en-US',{timeZone:ZWOLLE_TZ,year:'numeric'});
+  document.getElementById('dateStr').textContent = `${dayName} ${day} ${NL_MONTHS[monthIdx]} ${year}`;
+
+  // World clocks
+  CITIES.forEach(c=>{
+    const tH = pad(parseInt(now.toLocaleString('en-US',{timeZone:c.tz,hour:'2-digit',hour12:false})));
+    const tM = pad(parseInt(now.toLocaleString('en-US',{timeZone:c.tz,minute:'2-digit'})));
+    const tS = pad(parseInt(now.toLocaleString('en-US',{timeZone:c.tz,second:'2-digit'})));
+    document.getElementById('tz'+c.id).textContent = `${tH}:${tM}:${tS}`;
+    document.getElementById('off'+c.id).textContent = getOffsetDiff(c.tz);
+    document.getElementById('ds'+c.id).textContent = getDayState(c.tz);
+  });
+}
+
+update();
+setInterval(update, 1000);
+</script>
+</body>
+</html>

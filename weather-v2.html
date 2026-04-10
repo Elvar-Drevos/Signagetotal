@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weer — Zwolle</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;background:#0a0e17}
+
+/* ===== BACKGROUND PHOTO LAYERS ===== */
+.bg-layer{
+  position:fixed;inset:0;z-index:0;
+  background-size:cover;background-position:center;
+  transition:opacity 2s ease;
+}
+#bgCurrent{opacity:1}
+#bgNext{opacity:0}
+
+/* Gradient overlay for readability */
+.bg-overlay{
+  position:fixed;inset:0;z-index:1;
+  background:
+    linear-gradient(180deg,
+      rgba(0,0,0,0.25) 0%,
+      rgba(0,0,0,0.10) 25%,
+      rgba(0,0,0,0.20) 55%,
+      rgba(0,0,0,0.60) 100%
+    );
+}
+/* Vignette */
+.bg-vignette{
+  position:fixed;inset:0;z-index:1;
+  background:radial-gradient(ellipse 85% 75% at 50% 45%, transparent 50%, rgba(0,0,0,0.4) 100%);
+}
+
+/* Particle canvas */
+canvas#fx{position:fixed;inset:0;z-index:2;pointer-events:none}
+
+/* ===== LAYOUT ===== */
+.app{
+  position:relative;z-index:3;
+  height:100vh;width:100vw;
+  display:grid;
+  grid-template-rows:auto 1fr auto auto;
+  padding:clamp(1.2rem,2.5vh,2.5rem) clamp(1.2rem,3vw,3rem);
+  gap:clamp(.6rem,1.5vh,1.5rem);
+  color:#fff;
+}
+
+/* ===== HEADER ===== */
+.hdr{display:flex;align-items:center;gap:.7rem}
+.hdr-dot{width:7px;height:7px;border-radius:50%;background:#ffa44f;box-shadow:0 0 10px rgba(255,164,79,.5);animation:blink 2.5s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.hdr-tag{font-size:clamp(.6rem,1vw,.78rem);text-transform:uppercase;letter-spacing:.18em;color:rgba(255,255,255,.55);font-weight:600}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:.5rem}
+.hdr-date{font-family:'Space Mono',monospace;font-size:clamp(.55rem,.9vw,.72rem);color:rgba(255,255,255,.45);font-weight:400}
+.hdr-loc{display:flex;align-items:center;gap:.3rem;font-size:clamp(.6rem,1vw,.78rem);color:rgba(255,255,255,.55);font-weight:500}
+.hdr-loc svg{width:12px;height:12px;fill:#ffa44f;flex-shrink:0}
+
+/* ===== HERO ===== */
+.hero{
+  display:flex;flex-direction:column;
+  justify-content:center;align-items:center;
+  gap:clamp(.15rem,.6vh,.5rem);
+  text-align:center;
+}
+.hero-icon{
+  width:clamp(56px,10vw,110px);height:clamp(56px,10vw,110px);
+  filter:drop-shadow(0 6px 25px rgba(0,0,0,.35));
+}
+.hero-temp{
+  font-family:'Space Mono',monospace;
+  font-size:clamp(5rem,17vw,15rem);
+  font-weight:700;line-height:.88;
+  letter-spacing:-.04em;
+  text-shadow:0 4px 60px rgba(0,0,0,.3);
+}
+.hero-desc{
+  font-size:clamp(1rem,2.5vw,1.8rem);
+  font-weight:300;color:rgba(255,255,255,.85);
+  letter-spacing:.02em;
+  text-shadow:0 1px 8px rgba(0,0,0,.3);
+}
+.hero-meta{
+  display:flex;flex-wrap:wrap;justify-content:center;gap:clamp(.3rem,.8vw,.6rem);
+  margin-top:clamp(.2rem,.4vh,.4rem);
+}
+.chip{
+  display:inline-flex;align-items:center;gap:.25rem;
+  background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);
+  border-radius:100px;padding:.22em .7em;
+  font-size:clamp(.52rem,.95vw,.72rem);color:rgba(255,255,255,.7);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  font-weight:400;
+}
+
+/* ===== INFO CARDS ===== */
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(.4rem,.9vw,.9rem)}
+.card{
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:clamp(12px,1.4vw,18px);
+  padding:clamp(.6rem,1.3vw,1.3rem);
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  display:flex;flex-direction:column;align-items:center;gap:.2rem;text-align:center;
+  transition:background .3s,border-color .3s;
+}
+.card:hover{background:rgba(255,255,255,0.13);border-color:rgba(255,255,255,.2)}
+.card-label{font-size:clamp(.46rem,.82vw,.65rem);text-transform:uppercase;letter-spacing:.12em;color:rgba(255,255,255,.5);font-weight:600}
+.card-icon{font-size:clamp(1rem,2vw,1.6rem);line-height:1;width:1.4em;height:1.4em;display:flex;align-items:center;justify-content:center}
+.card-icon svg{width:100%;height:100%}
+.card-val{font-family:'Space Mono',monospace;font-size:clamp(.85rem,1.8vw,1.5rem);font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,.2)}
+.card-sub{font-size:clamp(.42rem,.72vw,.58rem);color:rgba(255,255,255,.5);font-weight:400}
+
+/* ===== HOURLY ===== */
+.hourly{display:flex;flex-direction:column;gap:clamp(.25rem,.4vh,.4rem)}
+.hourly-title{font-size:clamp(.5rem,.82vw,.7rem);text-transform:uppercase;letter-spacing:.14em;color:rgba(255,255,255,.5);font-weight:600}
+.hourly-track{
+  display:grid;
+  grid-template-columns:repeat(var(--hcols,8),1fr);
+  gap:clamp(.25rem,.5vw,.5rem);
+}
+.hcell{
+  background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);
+  border-radius:clamp(10px,1.2vw,14px);
+  padding:clamp(.3rem,.6vw,.6rem) clamp(.15rem,.3vw,.3rem);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  display:flex;flex-direction:column;align-items:center;gap:.1rem;text-align:center;
+  transition:background .3s;
+}
+.hcell.now{border-color:#ffa44f;background:rgba(255,164,79,0.14)}
+.hcell:hover{background:rgba(255,255,255,0.13)}
+.hc-t{font-family:'Space Mono',monospace;font-size:clamp(.4rem,.72vw,.58rem);color:rgba(255,255,255,.5)}
+.hc-i{width:clamp(16px,1.6vw,24px);height:clamp(16px,1.6vw,24px)}
+.hc-i svg{width:100%;height:100%}
+.hc-tmp{font-family:'Space Mono',monospace;font-size:clamp(.58rem,1.1vw,.9rem);font-weight:700}
+.hc-r{font-size:clamp(.36rem,.62vw,.5rem);color:#6ec6ff;font-weight:400}
+
+/* ===== LOADER ===== */
+.loader{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:#0a0e17;transition:opacity 1s}
+.loader.off{opacity:0;pointer-events:none}
+.ring{width:40px;height:40px;border:3px solid rgba(255,255,255,.1);border-top-color:#ffa44f;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:600px){
+  .cards{grid-template-columns:repeat(2,1fr)}
+  .hourly-track{grid-template-columns:repeat(4,1fr)}
+  .hdr-date{display:none}
+}
+@media(min-aspect-ratio:21/9){
+  .hero-temp{font-size:clamp(4rem,13vh,10rem)}
+  .hero-icon{width:clamp(44px,7vh,80px);height:clamp(44px,7vh,80px)}
+}
+</style>
+</head>
+<body>
+
+<div class="bg-layer" id="bgCurrent"></div>
+<div class="bg-layer" id="bgNext"></div>
+<div class="bg-overlay"></div>
+<div class="bg-vignette"></div>
+<canvas id="fx"></canvas>
+
+<div class="loader" id="loader"><div class="ring"></div></div>
+
+<div class="app">
+  <div class="hdr">
+    <div class="hdr-dot"></div>
+    <div class="hdr-tag">Actueel Weer</div>
+    <div class="hdr-right">
+      <div class="hdr-date" id="dateStr"></div>
+      <div class="hdr-loc">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg>
+        Zwolle, Overijssel
+      </div>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div class="hero-icon" id="heroIcon"></div>
+    <div class="hero-temp" id="heroTemp">--°</div>
+    <div class="hero-desc" id="heroDesc">Laden...</div>
+    <div class="hero-meta" id="heroMeta"></div>
+  </div>
+
+  <div class="cards">
+    <div class="card"><div class="card-label">Zonsopkomst</div><div class="card-icon" id="icRise"></div><div class="card-val" id="sunrise">--:--</div></div>
+    <div class="card"><div class="card-label">Zonsondergang</div><div class="card-icon" id="icSet"></div><div class="card-val" id="sunset">--:--</div></div>
+    <div class="card"><div class="card-label">Luchtkwaliteit</div><div class="card-icon" id="icAir"></div><div class="card-val" id="aqi">--</div><div class="card-sub" id="aqiLabel"></div></div>
+    <div class="card"><div class="card-label">Zicht</div><div class="card-icon" id="icVis"></div><div class="card-val" id="visibility">--</div><div class="card-sub" id="visLabel"></div></div>
+  </div>
+
+  <div class="hourly">
+    <div class="hourly-title">Komende uren</div>
+    <div class="hourly-track" id="hourlyTrack"></div>
+  </div>
+</div>
+
+<script>
+const LAT=52.5168,LON=6.083,TZ='Europe/Amsterdam';
+
+/* ==========================================
+   CURATED UNSPLASH PHOTOS — hand-picked, high-res, stable CDN URLs
+   Each category has 3 options for variety on reload.
+   ========================================== */
+const PHOTOS={
+  clear_day:[
+    'photo-1500382017468-9049fed747ef',
+    'photo-1504567961542-e24d9439a724',
+    'photo-1506905925346-21bda4d32df4',
+  ],
+  clear_night:[
+    'photo-1507400492013-162706c8c05e',
+    'photo-1519681393784-d120267933ba',
+    'photo-1475274047050-1d0c55b0e49f',
+  ],
+  partly_cloudy_day:[
+    'photo-1534088568595-a066f410bcda',
+    'photo-1517483000871-1dbf64a6e1c6',
+    'photo-1504608524841-42fe6f032b4b',
+  ],
+  cloudy_day:[
+    'photo-1501630834273-4b5604d2ee31',
+    'photo-1468276311594-df7cb65d8df6',
+    'photo-1509803874385-db3e3ff1dac1',
+  ],
+  cloudy_night:[
+    'photo-1499956827185-0d63ee78a910',
+    'photo-1532178910-7815d6919875',
+    'photo-1505322033502-1f4385692e6a',
+  ],
+  fog_day:[
+    'photo-1485236715568-ddc5ee6ca227',
+    'photo-1487621167305-5d248087c724',
+    'photo-1513836279014-a89f7a76ae86',
+  ],
+  fog_night:[
+    'photo-1510707577719-ae7c14805e3a',
+    'photo-1478760329108-5c3ed9d495a0',
+    'photo-1542224566-6e85f2e6772f',
+  ],
+  rain_day:[
+    'photo-1534274988757-a28bf1a57c17',
+    'photo-1515694346937-94d85e39e523',
+    'photo-1428592953211-077aa047fe72',
+  ],
+  rain_night:[
+    'photo-1501999635878-71cb5379c2d8',
+    'photo-1509635022432-0220ac4f1826',
+    'photo-1519692933481-e60deaa68145',
+  ],
+  storm_day:[
+    'photo-1605727216801-e27ce1d0cc28',
+    'photo-1527482797697-8795b05a13fe',
+    'photo-1492011221367-f47e3ccd77a0',
+  ],
+  storm_night:[
+    'photo-1429552077091-836152271555',
+    'photo-1472145246862-b24cf25c4a36',
+    'photo-1465577512280-1c2d41a79862',
+  ],
+  snow_day:[
+    'photo-1491002052546-bf38f186af56',
+    'photo-1477601263568-180e2c6d046e',
+    'photo-1517299321609-52687d1bc55a',
+  ],
+  snow_night:[
+    'photo-1478265409131-1f65c88f965c',
+    'photo-1548777123-e216912df7d8',
+    'photo-1483921020237-2ff51e8e4b22',
+  ],
+};
+
+function photoUrl(code,isDay){
+  let key;
+  if([0,1].includes(code)) key=isDay?'clear_day':'clear_night';
+  else if(code===2) key=isDay?'partly_cloudy_day':'cloudy_night';
+  else if(code===3) key=isDay?'cloudy_day':'cloudy_night';
+  else if([45,48].includes(code)) key=isDay?'fog_day':'fog_night';
+  else if([51,53,55,56,57,61,63,80,81].includes(code)) key=isDay?'rain_day':'rain_night';
+  else if([65,66,67,82,95,96,99].includes(code)) key=isDay?'storm_day':'storm_night';
+  else if([71,73,75,77,85,86].includes(code)) key=isDay?'snow_day':'snow_night';
+  else key=isDay?'clear_day':'clear_night';
+  const a=PHOTOS[key],pick=a[Math.floor(Math.random()*a.length)];
+  return`https://images.unsplash.com/${pick}?w=1920&h=1080&fit=crop&crop=entropy&q=80&auto=format`;
+}
+
+/* ==========================================
+   SVG ICONS
+   ========================================== */
+const IC={
+  sun:`<svg viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="18" fill="#FFD54F" stroke="#FFC107" stroke-width="2"/><g stroke="#FFD54F" stroke-width="3" stroke-linecap="round"><line x1="50" y1="10" x2="50" y2="22"/><line x1="50" y1="78" x2="50" y2="90"/><line x1="10" y1="50" x2="22" y2="50"/><line x1="78" y1="50" x2="90" y2="50"/><line x1="21.7" y1="21.7" x2="30.2" y2="30.2"/><line x1="69.8" y1="69.8" x2="78.3" y2="78.3"/><line x1="78.3" y1="21.7" x2="69.8" y2="30.2"/><line x1="30.2" y1="69.8" x2="21.7" y2="78.3"/></g></svg>`,
+  moon:`<svg viewBox="0 0 100 100" fill="none"><path d="M58 18c-16 0-30 13-30 30s14 30 30 30c7 0 14-2 19-7-4 2-8 3-13 3-16 0-30-14-30-30 0-11 6-21 15-26-3 0-6 0-9 0z" fill="#E0E0E0" stroke="#BDBDBD" stroke-width="1.5"/><circle cx="74" cy="24" r="1.3" fill="rgba(255,255,255,.55)"/><circle cx="82" cy="40" r="1" fill="rgba(255,255,255,.45)"/></svg>`,
+  pcloudy:`<svg viewBox="0 0 100 100" fill="none"><circle cx="36" cy="30" r="13" fill="#FFD54F" stroke="#FFC107" stroke-width="1.5"/><g stroke="#FFD54F" stroke-width="2" stroke-linecap="round"><line x1="36" y1="10" x2="36" y2="16"/><line x1="36" y1="44" x2="36" y2="50"/><line x1="16" y1="30" x2="22" y2="30"/><line x1="50" y1="30" x2="56" y2="30"/></g><path d="M26 70c-5 0-9-4-9-8s4-8 8-8c1-6 6-11 13-11 5 0 10 3 12 7h3c5 0 9 4 9 9s-4 9-9 9H26z" fill="rgba(255,255,255,.88)" stroke="rgba(200,200,200,.4)" stroke-width="1"/></svg>`,
+  cloud:`<svg viewBox="0 0 100 100" fill="none"><path d="M24 68c-7 0-11-5-11-10s4-10 10-10c1-8 8-14 16-14 7 0 12 4 15 9h3c6 0 11 5 11 11s-5 11-11 11H24z" fill="rgba(255,255,255,.82)" stroke="rgba(180,180,180,.4)" stroke-width="1.5"/></svg>`,
+  fog:`<svg viewBox="0 0 100 100" fill="none"><g stroke="rgba(255,255,255,.55)" stroke-width="3" stroke-linecap="round"><line x1="18" y1="36" x2="82" y2="36"/><line x1="22" y1="48" x2="78" y2="48"/><line x1="26" y1="60" x2="74" y2="60"/><line x1="30" y1="72" x2="70" y2="72"/></g></svg>`,
+  drizzle:`<svg viewBox="0 0 100 100" fill="none"><path d="M22 52c-5 0-9-4-9-8s4-8 8-8c1-6 6-11 13-11 5 0 10 3 12 7h3c5 0 9 4 9 9s-4 9-9 9H22z" fill="rgba(200,215,230,.78)" stroke="rgba(180,195,210,.45)" stroke-width="1"/><g fill="#90CAF9" opacity=".7"><circle cx="30" cy="64" r="2"/><circle cx="42" cy="70" r="1.8"/><circle cx="54" cy="63" r="2"/><circle cx="60" cy="72" r="1.5"/></g></svg>`,
+  rain:`<svg viewBox="0 0 100 100" fill="none"><path d="M22 50c-5 0-9-4-9-8s4-8 8-8c1-6 6-11 13-11 5 0 10 3 12 7h3c5 0 9 4 9 9s-4 9-9 9H22z" fill="rgba(180,200,220,.78)" stroke="rgba(150,170,190,.45)" stroke-width="1"/><g stroke="#64B5F6" stroke-width="2" stroke-linecap="round" opacity=".8"><line x1="28" y1="58" x2="24" y2="74"/><line x1="40" y1="56" x2="36" y2="72"/><line x1="52" y1="58" x2="48" y2="74"/><line x1="64" y1="56" x2="60" y2="72"/></g></svg>`,
+  heavyRain:`<svg viewBox="0 0 100 100" fill="none"><path d="M22 46c-5 0-9-4-9-8s4-8 8-8c1-6 6-11 13-11 5 0 10 3 12 7h3c5 0 9 4 9 9s-4 9-9 9H22z" fill="rgba(140,160,180,.82)" stroke="rgba(120,140,160,.45)" stroke-width="1"/><g stroke="#42A5F5" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="54" x2="16" y2="76"/><line x1="34" y1="52" x2="28" y2="74"/><line x1="46" y1="54" x2="40" y2="76"/><line x1="58" y1="52" x2="52" y2="74"/><line x1="70" y1="54" x2="64" y2="76"/></g></svg>`,
+  storm:`<svg viewBox="0 0 100 100" fill="none"><path d="M22 44c-5 0-9-4-9-8s4-8 8-8c1-6 6-11 13-11 5 0 10 3 12 7h3c5 0 9 4 9 9s-4 9-9 9H22z" fill="rgba(100,110,130,.82)" stroke="rgba(80,90,110,.45)" stroke-width="1"/><polygon points="47,46 38,66 47,63 42,82 60,56 49,60 54,46" fill="#FFD54F" stroke="#FFC107" stroke-width="1"/><g stroke="#42A5F5" stroke-width="2" stroke-linecap="round" opacity=".55"><line x1="24" y1="54" x2="20" y2="66"/><line x1="68" y1="52" x2="64" y2="64"/></g></svg>`,
+  snow:`<svg viewBox="0 0 100 100" fill="none"><path d="M22 48c-5 0-9-4-9-8s4-8 8-8c1-6 6-11 13-11 5 0 10 3 12 7h3c5 0 9 4 9 9s-4 9-9 9H22z" fill="rgba(200,210,230,.78)" stroke="rgba(180,190,210,.45)" stroke-width="1"/><g fill="rgba(255,255,255,.85)"><circle cx="26" cy="62" r="3"/><circle cx="42" cy="68" r="2.5"/><circle cx="56" cy="61" r="3"/><circle cx="34" cy="76" r="2"/><circle cx="50" cy="78" r="2.5"/><circle cx="66" cy="70" r="2"/></g></svg>`,
+  rise:`<svg viewBox="0 0 100 100" fill="none"><path d="M15 65h70" stroke="#FFD54F" stroke-width="2"/><circle cx="50" cy="45" r="10" fill="#FFD54F" stroke="#FFC107" stroke-width="1.5"/><g stroke="#FFD54F" stroke-width="2" stroke-linecap="round"><line x1="50" y1="27" x2="50" y2="32"/><line x1="33" y1="33" x2="37" y2="37"/><line x1="67" y1="33" x2="63" y2="37"/></g><path d="M42 75l8-7 8 7" stroke="#FFD54F" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  set:`<svg viewBox="0 0 100 100" fill="none"><path d="M15 65h70" stroke="#FF8A65" stroke-width="2"/><circle cx="50" cy="45" r="10" fill="#FF8A65" stroke="#E64A19" stroke-width="1.5"/><g stroke="#FF8A65" stroke-width="2" stroke-linecap="round"><line x1="50" y1="27" x2="50" y2="32"/><line x1="33" y1="33" x2="37" y2="37"/><line x1="67" y1="33" x2="63" y2="37"/></g><path d="M42 72l8 7 8-7" stroke="#FF8A65" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  wind:`<svg viewBox="0 0 100 100" fill="none"><g stroke="rgba(255,255,255,.7)" stroke-width="2.5" stroke-linecap="round"><path d="M15 40h45c6 0 10-4 10-9s-4-9-9-9" fill="none"/><path d="M15 55h55c5 0 8 4 8 8s-4 8-8 8" fill="none"/><path d="M25 70h30c4 0 7-3 7-7s-3-7-7-7" fill="none"/></g></svg>`,
+  eye:`<svg viewBox="0 0 100 100" fill="none"><path d="M10 50s15-25 40-25 40 25 40 25-15 25-40 25S10 50 10 50z" stroke="rgba(255,255,255,.7)" stroke-width="2.5" fill="none"/><circle cx="50" cy="50" r="10" stroke="rgba(255,255,255,.7)" stroke-width="2.5" fill="none"/><circle cx="50" cy="50" r="4" fill="rgba(255,255,255,.7)"/></svg>`,
+};
+
+function getIc(code,day){
+  if([0,1].includes(code))return day?IC.sun:IC.moon;
+  if(code===2)return IC.pcloudy;if(code===3)return IC.cloud;
+  if([45,48].includes(code))return IC.fog;
+  if([51,53,55,56,57].includes(code))return IC.drizzle;
+  if([61,63,80,81].includes(code))return IC.rain;
+  if([65,66,67,82].includes(code))return IC.heavyRain;
+  if([95,96,99].includes(code))return IC.storm;
+  if([71,73,75,77,85,86].includes(code))return IC.snow;
+  return day?IC.sun:IC.moon;
+}
+
+/* ==========================================
+   PARTICLES
+   ========================================== */
+const cvs=document.getElementById('fx'),ctx=cvs.getContext('2d');
+let parts=[],pType='none',raf;
+function rsz(){cvs.width=innerWidth;cvs.height=innerHeight}
+addEventListener('resize',rsz);rsz();
+
+function pFor(code){
+  if([51,53,55,56,57,61,63,80,81].includes(code))return'rain';
+  if([65,66,67,82,95,96,99].includes(code))return'heavyRain';
+  if([71,73,75,77,85,86].includes(code))return'snow';
+  if([45,48].includes(code))return'fog';
+  return'none';
+}
+function mkParts(type){
+  parts=[];pType=type;const w=cvs.width,h=cvs.height;
+  if(type==='rain')for(let i=0;i<100;i++)parts.push({x:Math.random()*w,y:Math.random()*h,l:Math.random()*16+8,s:Math.random()*5+4,o:Math.random()*.25+.12});
+  else if(type==='heavyRain')for(let i=0;i<200;i++)parts.push({x:Math.random()*w,y:Math.random()*h,l:Math.random()*22+10,s:Math.random()*8+6,o:Math.random()*.3+.18});
+  else if(type==='snow')for(let i=0;i<70;i++)parts.push({x:Math.random()*w,y:Math.random()*h,r:Math.random()*3+1,s:Math.random()*.8+.2,d:Math.random()*Math.PI*2,o:Math.random()*.45+.25});
+  else if(type==='fog')for(let i=0;i<6;i++)parts.push({x:Math.random()*w,y:Math.random()*h*.5+h*.25,r:Math.random()*180+120,s:Math.random()*.25+.08,o:Math.random()*.05+.015,dx:Math.random()>.5?1:-1});
+}
+function drw(){
+  ctx.clearRect(0,0,cvs.width,cvs.height);const w=cvs.width,h=cvs.height;
+  if(pType==='rain'||pType==='heavyRain')parts.forEach(p=>{ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x-1.2,p.y+p.l);ctx.strokeStyle=`rgba(180,210,240,${p.o})`;ctx.lineWidth=1;ctx.stroke();p.y+=p.s;p.x-=.25;if(p.y>h){p.y=-p.l;p.x=Math.random()*w}});
+  else if(pType==='snow')parts.forEach(p=>{p.d+=.008;ctx.beginPath();ctx.arc(p.x+Math.sin(p.d)*25,p.y,p.r,0,Math.PI*2);ctx.fillStyle=`rgba(255,255,255,${p.o})`;ctx.fill();p.y+=p.s;if(p.y>h){p.y=-8;p.x=Math.random()*w}});
+  else if(pType==='fog')parts.forEach(p=>{ctx.beginPath();const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r);g.addColorStop(0,`rgba(200,210,220,${p.o})`);g.addColorStop(1,'rgba(200,210,220,0)');ctx.fillStyle=g;ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();p.x+=p.s*p.dx;if(p.x>w+p.r)p.x=-p.r;if(p.x<-p.r)p.x=w+p.r});
+  raf=requestAnimationFrame(drw);
+}
+
+/* ==========================================
+   CROSSFADE BG
+   ========================================== */
+let curBg=null;
+function setBg(url){
+  if(url===curBg)return;curBg=url;
+  const img=new Image();
+  img.onload=()=>{
+    const n=document.getElementById('bgNext'),c=document.getElementById('bgCurrent');
+    n.style.backgroundImage=`url(${url})`;n.style.opacity='1';
+    setTimeout(()=>{c.style.backgroundImage=`url(${url})`;n.style.opacity='0'},2200);
+  };
+  img.src=url;
+}
+
+/* ==========================================
+   WMO
+   ========================================== */
+const WMO={0:{d:'Onbewolkt',n:'Helder'},1:{d:'Licht bewolkt',n:'Licht bewolkt'},2:{d:'Half bewolkt',n:'Half bewolkt'},3:{d:'Bewolkt',n:'Bewolkt'},45:{d:'Mist',n:'Mist'},48:{d:'Rijpmist',n:'Rijpmist'},51:{d:'Lichte motregen',n:'Lichte motregen'},53:{d:'Motregen',n:'Motregen'},55:{d:'Dichte motregen',n:'Dichte motregen'},56:{d:'IJzel (licht)',n:'IJzel (licht)'},57:{d:'IJzel',n:'IJzel'},61:{d:'Lichte regen',n:'Lichte regen'},63:{d:'Regen',n:'Regen'},65:{d:'Zware regen',n:'Zware regen'},66:{d:'IJsregen (licht)',n:'IJsregen (licht)'},67:{d:'IJsregen',n:'IJsregen'},71:{d:'Lichte sneeuw',n:'Lichte sneeuw'},73:{d:'Sneeuw',n:'Sneeuw'},75:{d:'Zware sneeuw',n:'Zware sneeuw'},77:{d:'Sneeuwkorrels',n:'Sneeuwkorrels'},80:{d:'Lichte buien',n:'Lichte buien'},81:{d:'Buien',n:'Buien'},82:{d:'Zware buien',n:'Zware buien'},85:{d:'Lichte sneeuwbuien',n:'Lichte sneeuwbuien'},86:{d:'Sneeuwbuien',n:'Sneeuwbuien'},95:{d:'Onweer',n:'Onweer'},96:{d:'Onweer met hagel',n:'Onweer met hagel'},99:{d:'Zwaar onweer',n:'Zwaar onweer'}};
+
+/* ==========================================
+   UTIL
+   ========================================== */
+const pad=n=>String(n).padStart(2,'0');
+const NLD=['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'];
+const NLM=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+function isDayNow(sr,ss){const now=new Date(),h=+now.toLocaleString('en-US',{timeZone:TZ,hour:'2-digit',hour12:false}),m=+now.toLocaleString('en-US',{timeZone:TZ,minute:'2-digit'}),t=h*60+m,[sh,sm]=sr.split(':').map(Number),[eh,em]=ss.split(':').map(Number);return t>=(sh*60+sm)&&t<(eh*60+em)}
+function isHDay(s,sr,ss){const h=+s.split('T')[1].split(':')[0],[sh]=sr.split(':').map(Number),[eh]=ss.split(':').map(Number);return h>=sh&&h<eh}
+function aqT(v){if(v<=20)return'Uitstekend';if(v<=40)return'Goed';if(v<=60)return'Matig';if(v<=80)return'Slecht';return'Zeer slecht'}
+function viT(k){if(k>=10)return'Helder';if(k>=4)return'Matig';if(k>=1)return'Beperkt';return'Slecht'}
+function hC(){const w=innerWidth;if(w<500)return 4;if(w<800)return 6;if(w<1200)return 8;return 10}
+
+/* ==========================================
+   MAIN
+   ========================================== */
+async function load(){
+  try{
+    const[wR,aR]=await Promise.all([
+      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,visibility&hourly=temperature_2m,weather_code,precipitation_probability&daily=sunrise,sunset&timezone=Europe%2FAmsterdam&forecast_days=2`),
+      fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${LAT}&longitude=${LON}&current=european_aqi&timezone=Europe%2FAmsterdam`)
+    ]);
+    const w=await wR.json(),a=await aR.json(),c=w.current;
+    const sr=w.daily.sunrise[0].split('T')[1],ss=w.daily.sunset[0].split('T')[1];
+    const day=isDayNow(sr,ss),code=c.weather_code,wmo=WMO[code]||WMO[0];
+
+    // BG photo
+    setBg(photoUrl(code,day));
+
+    // Particles
+    const pt=pFor(code);if(raf)cancelAnimationFrame(raf);mkParts(pt);
+    if(pt!=='none')drw();else ctx.clearRect(0,0,cvs.width,cvs.height);
+
+    // Date
+    const now=new Date(),dI=['sunday','monday','tuesday','wednesday','thursday','friday','saturday'].indexOf(now.toLocaleString('en-US',{timeZone:TZ,weekday:'long'}).toLowerCase());
+    const dN=now.toLocaleString('en-US',{timeZone:TZ,day:'numeric'}),mI=+now.toLocaleString('en-US',{timeZone:TZ,month:'numeric'})-1;
+    document.getElementById('dateStr').textContent=`${NLD[dI]} ${dN} ${NLM[mI]}`;
+
+    // Hero
+    document.getElementById('heroIcon').innerHTML=getIc(code,day);
+    document.getElementById('heroTemp').textContent=`${Math.round(c.temperature_2m)}\u00B0`;
+    document.getElementById('heroDesc').textContent=day?wmo.d:wmo.n;
+    document.getElementById('heroMeta').innerHTML=`<span class="chip">Voelt als ${Math.round(c.apparent_temperature)}\u00B0</span><span class="chip">Wind ${Math.round(c.wind_speed_10m)} km/u</span><span class="chip">Luchtvochtigheid ${c.relative_humidity_2m}%</span>`;
+
+    // Cards
+    document.getElementById('icRise').innerHTML=IC.rise;
+    document.getElementById('icSet').innerHTML=IC.set;
+    document.getElementById('icAir').innerHTML=IC.wind;
+    document.getElementById('icVis').innerHTML=IC.eye;
+    document.getElementById('sunrise').textContent=sr;
+    document.getElementById('sunset').textContent=ss;
+    const vk=Math.round(c.visibility/1000);
+    document.getElementById('visibility').textContent=`${vk} km`;
+    document.getElementById('visLabel').textContent=viT(vk);
+    if(a&&a.current){const q=a.current.european_aqi;document.getElementById('aqi').textContent=q;document.getElementById('aqiLabel').textContent=aqT(q)}
+    else document.getElementById('aqi').textContent='N/A';
+
+    // Hourly
+    const cols=hC();document.documentElement.style.setProperty('--hcols',cols);
+    const nowH=+now.toLocaleString('en-US',{timeZone:TZ,hour:'2-digit',hour12:false}),nowD=now.toISOString().split('T')[0];
+    let si=w.hourly.time.findIndex(t=>{const h=+t.split('T')[1].split(':')[0];return t.startsWith(nowD)&&h===nowH});
+    if(si===-1)si=0;
+    const strip=document.getElementById('hourlyTrack');strip.innerHTML='';
+    for(let i=0;i<cols;i++){
+      const idx=si+i;if(idx>=w.hourly.time.length)break;
+      const t=w.hourly.time[idx],hr=+t.split('T')[1].split(':')[0],tmp=Math.round(w.hourly.temperature_2m[idx]),cd=w.hourly.weather_code[idx],rn=w.hourly.precipitation_probability[idx],hd=isHDay(t,sr,ss),isN=i===0;
+      const el=document.createElement('div');el.className='hcell'+(isN?' now':'');
+      el.innerHTML=`<span class="hc-t">${isN?'Nu':pad(hr)+':00'}</span><div class="hc-i">${getIc(cd,hd)}</div><span class="hc-tmp">${tmp}\u00B0</span>${rn>0?`<span class="hc-r">${rn}%</span>`:''}`;
+      strip.appendChild(el);
+    }
+
+    document.getElementById('loader').classList.add('off');
+  }catch(e){console.error(e);document.getElementById('heroDesc').textContent='Fout bij laden';document.getElementById('loader').classList.add('off')}
+}
+
+load();
+setInterval(load,600000);
+addEventListener('resize',()=>{rsz();document.documentElement.style.setProperty('--hcols',hC())});
+</script>
+</body>
+</html>
