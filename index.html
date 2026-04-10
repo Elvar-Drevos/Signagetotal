@@ -2,15 +2,15 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>Digital Signage Shell</title>
+    <title>Signage Shell</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #000; overflow: hidden; cursor: none; }
-        #content-container { position: absolute; top: 0; left: 0; width: 100vw; height: calc(100vh - 80px); }
+        #content-container { position: absolute; top: 0; left: 0; width: 100vw; height: calc(100vh - 80px); background: #000; }
         iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: none; transition: opacity 1s ease-in-out; background: #000; }
         .hidden { opacity: 0; z-index: 1; }
         .visible { opacity: 1; z-index: 2; }
-        #ticker-container { position: absolute; bottom: 0; left: 0; width: 100vw; height: 80px; z-index: 10; }
+        #ticker-container { position: absolute; bottom: 0; left: 0; width: 100vw; height: 80px; z-index: 10; background: #000; }
     </style>
 </head>
 <body>
@@ -26,8 +26,6 @@
             playlist: [
                 { url: "clock.html",        duration: 10000 },
                 { url: "weather-v2.html",   duration: 15000 },
-                { url: "trein.html",        duration: 15000 },
-                { url: "bus.html",          duration: 10000 },
                 { url: "nos.html",          duration: 35000 },
                 { url: "nyt.html",          duration: 25000 },
                 { url: "Geschiedenis update.html", duration: 20000 },
@@ -35,7 +33,6 @@
                 { url: "bright.html",       duration: 25000 }
             ]
         };
-
         let currentIndex = -1;
         let currentFrame = 'A';
 
@@ -47,7 +44,6 @@
             const nextFrame = document.getElementById(nextFrameId);
             const currFrame = document.getElementById(currFrameId);
 
-            console.log("Laden slide:", slide.url);
             nextFrame.src = slide.url;
 
             setTimeout(() => {
@@ -58,7 +54,7 @@
                     currentFrame = (currentFrame === 'A' ? 'B' : 'A');
                 }, 1100);
                 setTimeout(nextSlide, slide.duration);
-            }, 1000); 
+            }, 1200); 
         }
         window.onload = nextSlide;
     </script>
