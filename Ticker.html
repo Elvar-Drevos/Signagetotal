@@ -3,354 +3,95 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NOS Nieuws Ticker Strip</title>
+<title>Ticker Strip</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  html {
-    width: 1920px; height: 80px; overflow: hidden;
-    background: #0A0A0C;
-  }
-  body {
-    background: #0A0A0C; width: 1920px; height: 80px; overflow: hidden;
-    font-family: 'Outfit', sans-serif; position: fixed; bottom: 0; left: 0;
-    -webkit-font-smoothing: antialiased;
+  body { 
+    background: #0A0A0C; width: 100vw; height: 80px; overflow: hidden;
+    font-family: 'Outfit', sans-serif;
   }
   .ticker-bar {
     width: 100%; height: 80px; display: flex; align-items: stretch;
-    background: linear-gradient(180deg, #131316 0%, #0A0A0C 100%);
-    border-top: 2px solid rgba(232, 93, 26, 0.5); position: relative;
+    background: #0A0A0C; border-top: 2px solid #E85D1A; position: relative;
   }
-  .ticker-bar::before {
-    content: ''; position: absolute; top: -12px; left: 0; right: 0; height: 12px;
-    background: linear-gradient(180deg, transparent 0%, rgba(232, 93, 26, 0.08) 100%);
-    pointer-events: none;
-  }
+  /* Logo & Live Badge */
+  .logo-block { width: 140px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #000; border-right: 1px solid rgba(255,255,255,0.1); position: relative; z-index: 10; }
+  .nos-text { font-weight: 900; font-size: 32px; letter-spacing: -1px; color: #fff; line-height: 1; }
+  .live-badge { background: #FF2D00; color: #fff; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; margin-top: 4px; text-transform: uppercase; }
 
-  /* ─── NOS LOGO ─── */
-  .logo-block {
-    display: flex; align-items: center; gap: 12px; padding: 0 26px;
-    background: linear-gradient(135deg, #E85D1A 0%, #C94D12 100%);
-    position: relative; z-index: 5; flex-shrink: 0; min-width: 130px;
-  }
-  .logo-block::after {
-    content: ''; position: absolute; right: -30px; top: 0; height: 100%; width: 30px;
-    background: linear-gradient(90deg, rgba(0,0,0,0.6), transparent); z-index: 4;
-  }
-  .nos-text { font-weight: 900; font-size: 28px; letter-spacing: 5px; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
-  .live-badge { display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.15); padding: 2px 8px 2px 6px; border-radius: 10px; }
-  .live-dot { width: 6px; height: 6px; background: white; border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
-  .live-text { font-size: 9px; font-weight: 700; letter-spacing: 1.5px; color: rgba(255,255,255,0.9); text-transform: uppercase; }
-  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+  /* Nieuws Track */
+  .news-container { flex: 1; overflow: hidden; display: flex; align-items: center; position: relative; background: rgba(255,255,255,0.02); }
+  .news-track { display: flex; white-space: nowrap; align-items: center; padding-left: 20px; animation: ticker-scroll 60s linear infinite; }
+  @keyframes ticker-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+  .tk-news-item { display: flex; align-items: center; margin-right: 50px; color: #eee; font-size: 18px; font-weight: 500; }
+  .tk-news-dot { width: 6px; height: 6px; background: #E85D1A; border-radius: 50%; margin-right: 15px; flex-shrink: 0; }
 
-  /* ─── SLIDE SYSTEM ─── */
-  .slide-block { position: relative; overflow: hidden; flex-shrink: 0; height: 80px; }
-  .slide-panel {
-    position: absolute; left: 0; top: 0; width: 100%; height: 100%;
-    display: flex; align-items: center; justify-content: center;
-    will-change: transform, opacity;
-    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
-  }
-  .slide-panel.visible { transform: translateY(0%); opacity: 1; }
-  .slide-panel.hidden-above { transform: translateY(-100%); opacity: 0; }
-  .slide-panel.hidden-below { transform: translateY(100%); opacity: 0; }
-
-  /* ─── INFO BLOCK ─── */
-  .info-block {
-    width: 155px; border-right: 1px solid rgba(255,255,255,0.06);
-    background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%);
-  }
-  .info-block .slide-panel { flex-direction: column; }
-  .clock-time { font-weight: 700; font-size: 28px; color: #F0F0EA; letter-spacing: 2px; line-height: 1.1; font-variant-numeric: tabular-nums; }
-  .clock-date { font-weight: 400; font-size: 10px; color: rgba(255,255,255,0.3); letter-spacing: 0.5px; margin-top: 3px; text-transform: capitalize; }
-  .weather-row { display: flex; align-items: center; gap: 7px; line-height: 1.2; }
-  .weather-icon { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
-  .weather-icon svg { width: 24px; height: 24px; }
-  .weather-temp { font-weight: 700; font-size: 26px; color: #F0F0EA; }
-  .weather-desc { font-weight: 400; font-size: 10px; color: rgba(255,255,255,0.3); margin-top: 2px; }
-  .weather-location { font-weight: 600; font-size: 9px; color: rgba(255,255,255,0.15); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 1px; }
-
-  /* ─── NEWS BLOCK ─── */
-  .news-block { flex: 1 1 auto; }
-  .news-block .slide-panel { justify-content: flex-start; padding: 0 0 0 24px; }
-  .news-thumb { width: 96px; height: 58px; border-radius: 5px; overflow: hidden; flex-shrink: 0; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); }
-  .news-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .news-thumb-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 22px; color: rgba(255,255,255,0.08); background: linear-gradient(135deg, rgba(232,93,26,0.06), rgba(42,127,255,0.03)); }
-  .news-info { flex: 1; min-width: 0; padding: 0 24px 0 16px; display: flex; flex-direction: column; justify-content: center; }
-  .news-counter { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: #E85D1A; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
-  .news-counter-dot { width: 4px; height: 4px; background: #E85D1A; border-radius: 50%; flex-shrink: 0; }
-  .news-title { font-weight: 600; font-size: 16px; color: #EEEEE8; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-  .news-time { font-size: 10px; font-weight: 400; color: rgba(255,255,255,0.2); margin-top: 3px; }
-
-  /* ─── SEPARATORS ─── */
-  .sep { width: 1px; align-self: stretch; background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%); flex-shrink: 0; }
-
-  /* ─── NOW PLAYING SECTION ─── */
-  .np-section {
-    display: flex; align-items: stretch; flex-shrink: 0;
-    border-left: 1px solid rgba(255,255,255,0.06);
-  }
-  .np-label {
-    width: 160px; display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    padding: 0 10px; position: relative; overflow: hidden;
-    border-right: 1px solid rgba(255,255,255,0.04);
-  }
-  .np-label .slide-panel { flex-direction: column; }
-  .np-label-text {
-    font-size: 8px; font-weight: 700; letter-spacing: 1.5px;
-    text-transform: uppercase; color: rgba(255,255,255,0.25);
-    line-height: 1.4; text-align: center;
-  }
-  .np-label-highlight {
-    color: rgba(255,255,255,0.5);
-    font-size: 10px;
-    letter-spacing: 2px;
-  }
-
-  /* ─── SWEET BEATS FM MINI ANIM ─── */
-  .sbfm-inner {
-    display: flex; align-items: center; gap: 8px;
-    position: relative; width: 100%; height: 100%;
-    justify-content: center;
-  }
-  .sbfm-inner canvas {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;
-  }
-  .sbfm-body { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
-  .sbfm-eq { display: flex; align-items: center; justify-content: center; gap: 2px; height: 22px; }
-  .sbfm-eq .b {
-    width: 3px; border-radius: 2px;
-    animation: sbBounce 0.5s ease-in-out infinite alternate;
-  }
-  @keyframes sbBounce { 0% { transform: scaleY(0.15); } 100% { transform: scaleY(1); } }
-  .sbfm-name {
-    font-weight: 900; font-size: 13px; letter-spacing: 1px; line-height: 1;
-    background: linear-gradient(90deg, #FF2D87, #FF6B2B, #FFD600, #FF2D87);
-    background-size: 300% 100%;
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    background-clip: text;
-    animation: sbGrad 3s linear infinite;
-  }
-  @keyframes sbGrad { 0% { background-position: 0% 50%; } 100% { background-position: 300% 50%; } }
-  .sbfm-fm {
-    font-size: 7px; font-weight: 700; letter-spacing: 2.5px; color: #00D4FF;
-    border: 1px solid rgba(0,212,255,0.35); padding: 1px 5px; border-radius: 4px;
-    animation: sbPulse 2s ease-in-out infinite alternate;
-  }
-  @keyframes sbPulse { 0% { opacity: 0.5; } 100% { opacity: 1; } }
-  .nowplaying-block { width: 360px; height: 80px; flex-shrink: 0; position: relative; overflow: hidden; background: #0A0A0C; }
-  .nowplaying-scaler { width: 800px; height: 200px; transform: scale(0.4); transform-origin: top left; position: absolute; top: 0; left: 0; background: #0A0A0C; }
-  .nowplaying-scaler iframe { width: 100%; height: 100%; border: none; display: block; background: #0A0A0C; }
+  /* Now Playing / Radio */
+  .np-block { width: 350px; background: #000; display: flex; align-items: center; padding: 0 20px; border-left: 1px solid rgba(255,255,255,0.1); }
+  .sbfm-label { color: #f5a623; font-weight: 800; font-size: 14px; margin-right: 15px; white-space: nowrap; }
+  canvas { width: 150px; height: 40px; }
 </style>
 </head>
 <body>
-<div class="ticker-bar">
-  <div class="logo-block">
-    <span class="nos-text">NOS</span>
-    <div class="live-badge"><span class="live-dot"></span><span class="live-text">Live</span></div>
-  </div>
-  <div class="slide-block info-block">
-    <div class="slide-panel visible" id="panelClock">
-      <div class="clock-time" id="clockTime">--:--</div>
-      <div class="clock-date" id="clockDate"></div>
+  <div class="ticker-bar">
+    <div class="logo-block">
+      <span class="nos-text">NOS</span>
+      <span class="live-badge">Live</span>
     </div>
-    <div class="slide-panel hidden-below" id="panelWeather">
-      <div class="weather-row">
-        <span class="weather-icon" id="wIcon"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#FFB800" stroke-width="2"><circle cx="12" cy="12" r="5"/></svg></span>
-        <span class="weather-temp" id="wTemp">--°</span>
-      </div>
-      <div class="weather-desc" id="wDesc"></div>
-      <div class="weather-location">Zwolle</div>
-    </div>
-  </div>
-  <div class="sep"></div>
-  <div class="slide-block news-block">
-    <div class="slide-panel visible" id="newsA">
-      <div class="news-thumb" id="thumbA"><div class="news-thumb-placeholder">📰</div></div>
-      <div class="news-info">
-        <div class="news-counter" id="counterA"><span class="news-counter-dot"></span>Laden...</div>
-        <div class="news-title" id="titleA">NOS Nieuws wordt opgehaald...</div>
-        <div class="news-time" id="timeA"></div>
-      </div>
-    </div>
-    <div class="slide-panel hidden-below" id="newsB">
-      <div class="news-thumb" id="thumbB"><div class="news-thumb-placeholder">📰</div></div>
-      <div class="news-info">
-        <div class="news-counter" id="counterB"><span class="news-counter-dot"></span></div>
-        <div class="news-title" id="titleB"></div>
-        <div class="news-time" id="timeB"></div>
-      </div>
-    </div>
-  </div>
-  <div class="sep"></div>
-  <div class="np-section">
-    <div class="np-label slide-block">
-      <div class="slide-panel visible" id="npLabelNP">
-        <span class="np-label-text">NOW</span>
-        <span class="np-label-text np-label-highlight">PLAYING</span>
-      </div>
-      <div class="slide-panel hidden-below" id="npLabelSB">
-        <div class="sbfm-inner">
-          <canvas id="sbfmCanvas"></canvas>
-          <div class="sbfm-body">
-            <div class="sbfm-eq" id="sbfmEq"></div>
-            <div class="sbfm-name">SWEET BEATS</div>
-            <span class="sbfm-fm">FM</span>
-          </div>
+    <div class="news-container">
+      <div id="tkNewsTrack" class="news-track">
         </div>
-      </div>
     </div>
-    <div class="nowplaying-block" id="npBlock">
-      <div class="nowplaying-scaler" id="npScaler">
-        <iframe id="npIframe" src="https://beta.nowplaying.site/HvbaiOSqF7kCdhO0" allow="autoplay; encrypted-media" scrolling="no"></iframe>
-      </div>
+    <div class="np-block">
+      <span class="sbfm-label">SWEET BEATS FM</span>
+      <canvas id="sbfmCanvas"></canvas>
     </div>
   </div>
-</div>
+
 <script>
-var NOS_FEED='https://feeds.nos.nl/nosnieuwsalgemeen';
-var WEATHER_URL='https://api.open-meteo.com/v1/forecast?latitude=52.5168&longitude=6.0830&current=temperature_2m,weather_code&timezone=Europe%2FAmsterdam';
-var NEWS_CYCLE_MS=5000,WEATHER_EVERY_N=4;
-var newsItems=[],newsIdx=0,showClock=true,weatherOK=false,useNewsA=true,cycleCount=0;
-
-var svgSun='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#FFB800" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
-var svgPartSun='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke-width="2"><circle cx="10" cy="8" r="4" stroke="#FFB800"/><line x1="10" y1="1" x2="10" y2="2.5" stroke="#FFB800"/><line x1="4" y1="4" x2="5" y2="5" stroke="#FFB800"/><line x1="2" y1="8" x2="3.5" y2="8" stroke="#FFB800"/><line x1="16" y1="4" x2="15" y2="5" stroke="#FFB800"/><line x1="18" y1="8" x2="16.5" y2="8" stroke="#FFB800"/><path d="M6 19a4 4 0 0 1-.5-7.97 6 6 0 0 1 11.27-1.28A3.5 3.5 0 0 1 20 13.5 3.5 3.5 0 0 1 16.5 17H7" stroke="#AAB" fill="none"/></svg>';
-var svgCloud='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#AAB" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>';
-var svgRain='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke-width="2"><path d="M16 13V4a4 4 0 0 0-8 0v1H6a4 4 0 0 0 0 8h10a3 3 0 0 0 0-6z" stroke="#AAB" fill="none"/><line x1="8" y1="19" x2="8" y2="21" stroke="#5B9BD5"/><line x1="12" y1="17" x2="12" y2="21" stroke="#5B9BD5"/><line x1="16" y1="19" x2="16" y2="21" stroke="#5B9BD5"/></svg>';
-var svgLightRain='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke-width="2"><path d="M16 13V4a4 4 0 0 0-8 0v1H6a4 4 0 0 0 0 8h10a3 3 0 0 0 0-6z" stroke="#AAB" fill="none"/><line x1="10" y1="19" x2="10" y2="21" stroke="#5B9BD5"/><line x1="14" y1="17" x2="14" y2="19" stroke="#5B9BD5"/></svg>';
-var svgSnow='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke-width="2"><path d="M16 13V4a4 4 0 0 0-8 0v1H6a4 4 0 0 0 0 8h10a3 3 0 0 0 0-6z" stroke="#AAB" fill="none"/><circle cx="8" cy="19" r="1" fill="#cde"/><circle cx="12" cy="17" r="1" fill="#cde"/><circle cx="16" cy="20" r="1" fill="#cde"/></svg>';
-var svgFog='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#AAB" stroke-width="2" stroke-linecap="round"><line x1="3" y1="10" x2="21" y2="10"/><line x1="5" y1="14" x2="19" y2="14"/><line x1="7" y1="18" x2="17" y2="18"/></svg>';
-var svgThunder='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke-width="2"><path d="M16 13V4a4 4 0 0 0-8 0v1H6a4 4 0 0 0 0 8h10a3 3 0 0 0 0-6z" stroke="#AAB" fill="none"/><polyline points="13 16 11 20 15 20 12 24" stroke="#FFD700" fill="none"/></svg>';
-var svgUnknown='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#AAB" stroke-width="2"><path d="M12 22c0-2 2-3 2-5a4 4 0 1 0-8 0c0 2 2 3 2 5"/><line x1="12" y1="2" x2="12" y2="6"/></svg>';
-
-var WMO={0:[svgSun,'Onbewolkt'],1:[svgPartSun,'Licht bewolkt'],2:[svgPartSun,'Half bewolkt'],3:[svgCloud,'Bewolkt'],45:[svgFog,'Mist'],48:[svgFog,'Rijpmist'],51:[svgLightRain,'Lichte motregen'],53:[svgLightRain,'Motregen'],55:[svgRain,'Dichte motregen'],56:[svgRain,'Aanvr. motregen'],57:[svgRain,'Aanvr. motregen'],61:[svgLightRain,'Lichte regen'],63:[svgRain,'Regen'],65:[svgRain,'Zware regen'],66:[svgRain,'Aanvr. regen'],67:[svgRain,'Aanvr. regen'],71:[svgSnow,'Lichte sneeuw'],73:[svgSnow,'Sneeuw'],75:[svgSnow,'Zware sneeuw'],77:[svgSnow,'Sneeuwkorrels'],80:[svgLightRain,'Lichte buien'],81:[svgRain,'Buien'],82:[svgThunder,'Zware buien'],85:[svgSnow,'Sneeuwbuien'],86:[svgSnow,'Zware sneeuwbuien'],95:[svgThunder,'Onweer'],96:[svgThunder,'Onweer + hagel'],99:[svgThunder,'Zwaar onweer']};
-
-function fetchData(url,cb){
-  var x=new XMLHttpRequest();x.open('GET',url,true);x.timeout=10000;
-  x.onload=function(){cb(x.status>=200&&x.status<300,x.responseText)};
-  x.onerror=function(){cb(false,'')};x.ontimeout=function(){cb(false,'')};x.send();
+async function fetchAllNews() {
+  try {
+    const response = await fetch('https://api.allorigins.win/raw?url=https://feeds.nos.nl/nosnieuwsalgemeen');
+    const text = await response.text();
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(text, "text/xml");
+    const items = xml.querySelectorAll("item");
+    const container = document.getElementById('tkNewsTrack');
+    
+    let html = '';
+    // We herhalen de items 2x voor een oneindige loop
+    const itemsArr = Array.from(items).slice(0, 15);
+    const content = itemsArr.map(item => `
+      <div class="tk-news-item">
+        <span class="tk-news-dot"></span>
+        <span>${item.querySelector("title").textContent}</span>
+      </div>
+    `).join('');
+    
+    container.innerHTML = content + content;
+  } catch (e) { console.error("News error", e); }
 }
 
-function slideSwap(o,i){
-  o.className='slide-panel hidden-above';i.className='slide-panel hidden-below';
-  setTimeout(function(){i.className='slide-panel visible'},50);
-}
-
-function fetchWeather(){
-  fetchData(WEATHER_URL,function(ok,t){if(!ok)return;try{var d=JSON.parse(t);if(d&&d.current){var info=WMO[d.current.weather_code]||[svgUnknown,'Onbekend'];document.getElementById('wIcon').innerHTML=info[0];document.getElementById('wTemp').textContent=Math.round(d.current.temperature_2m)+'\u00b0C';document.getElementById('wDesc').textContent=info[1];weatherOK=true}}catch(e){}});
-}
-
-function updateClock(){
-  var n=new Date();
-  document.getElementById('clockTime').textContent=n.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
-  document.getElementById('clockDate').textContent=n.toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'short'});
-}
-
-function parseRSS(xml){
-  var doc=new DOMParser().parseFromString(xml,'text/xml'),items=doc.querySelectorAll('item'),r=[];
-  for(var j=0;j<items.length;j++){var it=items[j],desc=it.querySelector('description')?it.querySelector('description').textContent:'',img='',enc=it.querySelector('enclosure');
-  if(enc&&(enc.getAttribute('type')||'').indexOf('image')!==-1)img=enc.getAttribute('url')||'';
-  if(!img){var m=desc.match(/<img[^>]+src=["']([^"']+)["']/);if(m)img=m[1]}
-  r.push({title:it.querySelector('title')?it.querySelector('title').textContent:'',pubDate:it.querySelector('pubDate')?it.querySelector('pubDate').textContent:'',category:it.querySelector('category')?it.querySelector('category').textContent:'Nieuws',image:img})}return r;
-}
-
-function timeAgo(s){
-  try{var d=new Date(s);if(isNaN(d))return'';var m=Math.floor((Date.now()-d)/60000);
-  if(m<1)return'zojuist';if(m<60)return m+' min geleden';var h=Math.floor(m/60);
-  if(h<24)return h+' uur geleden';return d.toLocaleDateString('nl-NL',{day:'numeric',month:'short'})}catch(e){return''}
-}
-
-function setSlot(s,i){
-  var it=newsItems[i];if(!it)return;
-  document.getElementById('counter'+s).innerHTML='<span class="news-counter-dot"></span>'+(i+1)+' / '+newsItems.length+'  \u00b7  '+(it.category||'Nieuws');
-  document.getElementById('title'+s).textContent=it.title;
-  document.getElementById('time'+s).textContent=timeAgo(it.pubDate);
-  var th=document.getElementById('thumb'+s);
-  th.innerHTML=it.image?'<img src="'+it.image+'" alt="" onerror="this.parentElement.innerHTML=\'<div class=news-thumb-placeholder>\ud83d\udcf0</div>\'">':'<div class="news-thumb-placeholder">\ud83d\udcf0</div>';
-}
-
-var newsLoading=false;
-function loadNews(){
-  if(newsLoading)return;newsLoading=true;
-  fetchData(NOS_FEED,function(ok,t){
-    newsLoading=false;if(!ok)return;
-    try{var items=parseRSS(t);if(items.length){newsItems=items;if(newsIdx>=items.length)newsIdx=0}}catch(e){}
-  });
-  setTimeout(function(){newsLoading=false},15000);
-}
-
-function cycle(){
-  cycleCount++;
-  if(weatherOK&&cycleCount%WEATHER_EVERY_N===0){
-    var pc=document.getElementById('panelClock'),pw=document.getElementById('panelWeather');
-    if(showClock)slideSwap(pc,pw);else slideSwap(pw,pc);showClock=!showClock;
+// Simpele visualizer voor de Pi
+function startVisualizer() {
+  const cv = document.getElementById('sbfmCanvas');
+  const cx = cv.getContext('2d');
+  function drw() {
+    cx.clearRect(0,0,cv.width,cv.height);
+    cx.fillStyle = '#f5a623';
+    for(let i=0; i<15; i++) {
+      let h = Math.random() * 30;
+      cx.fillRect(i*10, 40-h, 6, h);
+    }
+    setTimeout(() => requestAnimationFrame(drw), 100);
   }
-  if(newsItems.length>0){
-    newsIdx=(newsIdx+1)%newsItems.length;
-    var inS=useNewsA?'A':'B',outS=useNewsA?'B':'A';
-    setSlot(inS,newsIdx);
-    slideSwap(document.getElementById('news'+outS),document.getElementById('news'+inS));
-    useNewsA=!useNewsA;
-  }
-}
-
-function fitNP(){
-  var b=document.getElementById('npBlock'),s=document.getElementById('npScaler');if(!b||!s)return;
-  var vW=760,vH=160,sc=Math.min(b.offsetWidth/vW,b.offsetHeight/vH);
-  s.style.width=vW+'px';s.style.height=vH+'px';
-  s.style.transform='scale('+sc+')';s.style.transformOrigin='top left';
-}
-
-// Ververs alleen de nowplaying iframe elk uur om geheugenlek te voorkomen
-setInterval(function(){
-  var iframe=document.getElementById('npIframe');
-  if(iframe){
-    var src=iframe.src;
-    iframe.src='about:blank';
-    setTimeout(function(){iframe.src=src;},1000);
-  }
-},60*60*1000);
-
-// ─── SWEET BEATS FM MINI ANIMATION ───
-(function(){
-  var eq=document.getElementById('sbfmEq');
-  var cols=['#FF2D87','#FF6B2B','#FFD600','#00D4FF','#7B2FFF','#FF2D87','#FF6B2B'];
-  var hts=[10,16,8,20,12,18,9];
-  for(var i=0;i<7;i++){
-    var b=document.createElement('div');b.className='b';
-    b.style.height=hts[i]+'px';
-    b.style.background='linear-gradient(180deg,'+cols[i]+','+cols[(i+2)%7]+')';
-    b.style.animationDelay=(i*0.06)+'s';
-    b.style.animationDuration=(0.3+Math.random()*0.4)+'s';
-    eq.appendChild(b);
-  }
-  var cv=document.getElementById('sbfmCanvas'),cx=cv.getContext('2d');
-  function rsz(){cv.width=cv.offsetWidth;cv.height=cv.offsetHeight}
-  rsz();
-  var pts=[];var pc=['#FF2D87','#FF6B2B','#FFD600','#00D4FF','#7B2FFF'];
-  for(var i=0;i<12;i++)pts.push({x:Math.random()*200,y:Math.random()*100,r:Math.random()*1.2+0.3,dx:(Math.random()-0.5)*0.25,dy:(Math.random()-0.5)*0.15,c:pc[i%5],a:Math.random()*0.25+0.08,p:Math.random()*6.28,ps:0.012+Math.random()*0.01});
-  function drw(){cx.clearRect(0,0,cv.width,cv.height);for(var p of pts){p.x+=p.dx;p.y+=p.dy;p.p+=p.ps;if(p.x<-2)p.x=cv.width+2;if(p.x>cv.width+2)p.x=-2;if(p.y<-2)p.y=cv.height+2;if(p.y>cv.height+2)p.y=-2;var al=p.a*(0.5+0.5*Math.sin(p.p));cx.globalAlpha=al;cx.beginPath();cx.arc(p.x,p.y,p.r,0,6.28);cx.fillStyle=p.c;cx.fill()}cx.globalAlpha=1;requestAnimationFrame(drw)}
   drw();
-})();
+}
 
-// ─── NP LABEL TOGGLE (10s) ───
-var npLabelShowNP=true;
-setInterval(function(){
-  var lNP=document.getElementById('npLabelNP');
-  var lSB=document.getElementById('npLabelSB');
-  if(npLabelShowNP){slideSwap(lNP,lSB)}else{slideSwap(lSB,lNP)}
-  npLabelShowNP=!npLabelShowNP;
-},10000);
-
-updateClock();loadNews();fetchWeather();fitNP();
-setInterval(updateClock,1000);
-setInterval(loadNews,180000);
-setInterval(fetchWeather,600000);
-setInterval(cycle,NEWS_CYCLE_MS);
-setTimeout(function(){if(!newsItems.length)loadNews()},10000);
-setTimeout(function(){if(!weatherOK)fetchWeather()},10000);
-document.getElementById('npIframe').addEventListener('load',function(){setTimeout(fitNP,500)});
+fetchAllNews();
+setInterval(fetchAllNews, 300000);
+startVisualizer();
 </script>
 </body>
 </html>
