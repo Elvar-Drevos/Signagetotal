@@ -1,62 +1,87 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-    <meta charset="UTF-8">
-    <title>Signage Shell</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #000; overflow: hidden; cursor: none; }
-        #content-container { position: absolute; top: 0; left: 0; width: 100vw; height: calc(100vh - 80px); background: #000; }
-        iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: none; transition: opacity 1s ease-in-out; background: #000; }
-        .hidden { opacity: 0; z-index: 1; }
-        .visible { opacity: 1; z-index: 2; }
-        #ticker-container { position: absolute; bottom: 0; left: 0; width: 100vw; height: 80px; z-index: 10; background: #000; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Digital Signage Shell</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100vw;height:100vh;overflow:hidden;background:#000;cursor:none}
+::-webkit-scrollbar{display:none}
+.frame{position:absolute;top:0;left:0;width:100%;height:calc(100vh - 80px);border:none;background:#000;will-change:opacity;transition:opacity 1s ease-in-out}
+#ticker{position:absolute;bottom:0;left:0;width:100%;height:80px;border:none;background:#0A0A0C}
+</style>
 </head>
 <body>
-    <div id="content-container">
-        <iframe id="frameA" class="visible" src="about:blank"></iframe>
-        <iframe id="frameB" class="hidden" src="about:blank"></iframe>
-    </div>
-    <div id="ticker-container">
-        <iframe src="Ticker.html" style="width:100%; height:100%; border:none;"></iframe>
-    </div>
-    <script>
-        const CONFIG = {
-            playlist: [
-                { url: "clock.html",        duration: 10000 },
-                { url: "weather-v2.html",   duration: 15000 },
-                { url: "nos.html",          duration: 35000 },
-                { url: "nyt.html",          duration: 25000 },
-                { url: "Geschiedenis update.html", duration: 20000 },
-                { url: "sky.html",          duration: 25000 },
-                { url: "bright.html",       duration: 25000 }
-            ]
-        };
-        let currentIndex = -1;
-        let currentFrame = 'A';
+<iframe id="fA" class="frame" src="about:blank"></iframe>
+<iframe id="fB" class="frame" src="about:blank" style="opacity:0"></iframe>
+<iframe id="ticker" src="ticker.html"></iframe>
+<script>
+var CONFIG = {
+  playlist: [
+    { url: "klok.html",         duration: 10000 },
+    { url: "weer.html",         duration: 10000 },
+    { url: "trein.html",        duration: 15000 },
+    { url: "bus.html",          duration: 10000 },
+    { url: "nos.html",          duration: 30000 },
+    { url: "nyt.html",          duration: 20000 },
+    { url: "geschiedenis.html", duration: 15000 },
+    { url: "sky.html",          duration: 20000 },
+    { url: "bright.html",       duration: 20000 }
+  ],
+  transitionMs: 1000
+};
 
-        function nextSlide() {
-            currentIndex = (currentIndex + 1) % CONFIG.playlist.length;
-            const slide = CONFIG.playlist[currentIndex];
-            const nextFrameId = currentFrame === 'A' ? 'frameB' : 'frameA';
-            const currFrameId = currentFrame === 'A' ? 'frameA' : 'frameB';
-            const nextFrame = document.getElementById(nextFrameId);
-            const currFrame = document.getElementById(currFrameId);
+var fA = document.getElementById('fA');
+var fB = document.getElementById('fB');
+var active = fA, standby = fB;
+var idx = 0, timer = null, loadTimer = null;
 
-            nextFrame.src = slide.url;
+function show(i) {
+  clearTimeout(timer);
+  clearTimeout(loadTimer);
+  var item = CONFIG.playlist[i];
+  idx = i;
+  console.log('[Shell] Loading:', item.url);
 
-            setTimeout(() => {
-                nextFrame.className = 'visible';
-                currFrame.className = 'hidden';
-                setTimeout(() => {
-                    currFrame.src = 'about:blank';
-                    currentFrame = (currentFrame === 'A' ? 'B' : 'A');
-                }, 1100);
-                setTimeout(nextSlide, slide.duration);
-            }, 1200); 
-        }
-        window.onload = nextSlide;
-    </script>
+  // Load next page into standby iframe
+  standby.src = item.url;
+
+  // Timeout: if page doesn't load in 10s, skip
+  loadTimer = setTimeout(function() {
+    console.warn('[Shell] Load timeout, skipping:', item.url);
+    next();
+  }, 10000);
+
+  standby.onload = function() {
+    clearTimeout(loadTimer);
+    standby.onload = null;
+    console.log('[Shell] Showing:', item.url);
+
+    // Crossfade
+    standby.style.opacity = '1';
+    active.style.opacity = '0';
+
+    var prev = active;
+    active = standby;
+    standby = prev;
+
+    // Blank the hidden iframe after transition
+    setTimeout(function() {
+      standby.src = 'about:blank';
+    }, CONFIG.transitionMs + 200);
+
+    // Schedule next
+    timer = setTimeout(next, item.duration);
+  };
+}
+
+function next() {
+  show((idx + 1) % CONFIG.playlist.length);
+}
+
+// Start after brief delay
+setTimeout(function() { show(0); }, 1000);
+</script>
 </body>
 </html>
