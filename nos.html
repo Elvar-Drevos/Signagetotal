@@ -177,6 +177,8 @@ function hideSub(el) {
   setTimeout(function() { resetSub(el); }, 2600);
 }
 
+var firstRun = true;
+
 function runLoop() {
   var intro = document.getElementById('intro');
   var art0 = document.getElementById('art-0');
@@ -185,7 +187,12 @@ function runLoop() {
   showSub(intro);
 
   if (!items.length) {
-    setTimeout(function() { hideSub(intro); runLoop(); }, INTRO_DUR + ART_DUR * 2);
+    // No items: keep showing intro, retry fetch every 3s
+    setTimeout(function() {
+      fetchRSS().then(function(f) { if (f.length) items = f; });
+      hideSub(intro);
+      runLoop();
+    }, 3000);
     return;
   }
 
@@ -207,6 +214,11 @@ function runLoop() {
 
       setTimeout(function() {
         hideSub(art1);
+        // Signal shell: done showing 2 articles
+        if (firstRun) {
+          firstRun = false;
+          try { parent.postMessage('slideComplete', '*'); } catch(e) {}
+        }
         runLoop();
       }, ART_DUR);
     }, ART_DUR);
