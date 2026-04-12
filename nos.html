@@ -178,21 +178,22 @@ function hideSub(el) {
 }
 
 function runLoop() {
-  if (!items.length) { setTimeout(runLoop, 5000); return; }
-
   var intro = document.getElementById('intro');
   var art0 = document.getElementById('art-0');
   var art1 = document.getElementById('art-1');
+  resetSub(intro); resetSub(art0); resetSub(art1);
+  showSub(intro);
+
+  if (!items.length) {
+    setTimeout(function() { hideSub(intro); runLoop(); }, INTRO_DUR + ART_DUR * 2);
+    return;
+  }
+
   var i0 = (pairIdx * 2) % items.length;
   var i1 = (pairIdx * 2 + 1) % items.length;
   pairIdx++;
-
   fillArt(0, items[i0]);
   fillArt(1, items[i1]);
-
-  // Show intro
-  resetSub(intro); resetSub(art0); resetSub(art1);
-  showSub(intro);
 
   setTimeout(function() {
     hideSub(intro);
@@ -212,6 +213,7 @@ function runLoop() {
   }, INTRO_DUR);
 }
 
+document.getElementById('intro').classList.add('ns-active');
 fetchRSS().then(function(fetched) {
   if (fetched.length) items = fetched;
   runLoop();
