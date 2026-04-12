@@ -24,11 +24,11 @@ var CONFIG = {
     { url: "trein.html",              duration: 15000 },
     { url: "spoor.html",              duration: 15000 },
     { url: "bus.html",                duration: 10000 },
-    { url: "nos.html",                duration: 35000 },
-    { url: "nyt.html",                duration: 25000 },
+    { url: "nos.html",                dynamic: true, maxWait: 90000 },
+    { url: "nyt.html",                dynamic: true, maxWait: 90000 },
     { url: "Geschiedenis update.html", duration: 15000 },
-    { url: "sky.html",                duration: 25000 },
-    { url: "bright.html",             duration: 25000 }
+    { url: "sky.html",                dynamic: true, maxWait: 90000 },
+    { url: "bright.html",             dynamic: true, maxWait: 90000 }
   ],
   transitionMs: 1000
 };
@@ -38,6 +38,15 @@ var fB = document.getElementById('fB');
 var active = fA, standby = fB;
 var idx = 0, timer = null, loadTimer = null;
 
+// Listen for "done" signal from news iframes
+window.addEventListener('message', function(e) {
+  if (e.data === 'slideComplete') {
+    console.log('[Shell] Received slideComplete signal');
+    clearTimeout(timer);
+    next();
+  }
+});
+
 function show(i) {
   clearTimeout(timer);
   clearTimeout(loadTimer);
@@ -45,7 +54,6 @@ function show(i) {
   idx = i;
   console.log('[Shell] Loading:', item.url);
 
-  // Load next page into standby iframe
   standby.src = item.url;
 
   // Timeout: if page doesn't load in 10s, skip
@@ -72,8 +80,15 @@ function show(i) {
       standby.src = 'about:blank';
     }, CONFIG.transitionMs + 200);
 
-    // Schedule next
-    timer = setTimeout(next, item.duration);
+    // Schedule next: fixed duration or wait for signal (with safety max)
+    if (item.dynamic) {
+      timer = setTimeout(function() {
+        console.warn('[Shell] Max wait reached for:', item.url);
+        next();
+      }, item.maxWait || 60000);
+    } else {
+      timer = setTimeout(next, item.duration);
+    }
   };
 }
 
@@ -81,7 +96,6 @@ function next() {
   show((idx + 1) % CONFIG.playlist.length);
 }
 
-// Start after brief delay
 setTimeout(function() { show(0); }, 1000);
 </script>
 </body>
