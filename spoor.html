@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spoor Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #0a0e17;
+  color: #e4e6eb;
+  font-family: 'Outfit', sans-serif;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  cursor: none;
+}
+
+.bg-image {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url('https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=1920&q=80') center center / cover no-repeat;
+  z-index: 0;
+}
+
+.bg-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(10,14,23,0.92) 0%, rgba(10,14,23,0.88) 50%, rgba(10,14,23,0.94) 100%);
+  z-index: 1;
+}
+
+.dashboard {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 32px;
+  padding: 48px 48px 40px;
+  height: 100%;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.column-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  position: relative;
+}
+
+.column-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 60px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.column--storingen .column-header::after { background: #ef4444; }
+.column--werkzaamheden .column-header::after { background: #f59e0b; }
+.column--nieuws .column-header::after { background: #3b82f6; }
+
+.column-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.column--storingen .column-icon { background: rgba(239,68,68,0.15); color: #ef4444; }
+.column--werkzaamheden .column-icon { background: rgba(245,158,11,0.15); color: #f59e0b; }
+.column--nieuws .column-icon { background: rgba(59,130,246,0.15); color: #3b82f6; }
+
+.column-icon svg { width: 20px; height: 20px; }
+
+.column-title {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+}
+
+.column-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+
+.column--storingen .column-count {
+  background: rgba(239,68,68,0.18);
+  color: #f87171;
+}
+
+.column--werkzaamheden .column-count {
+  background: rgba(245,158,11,0.18);
+  color: #fbbf24;
+}
+
+.column--nieuws .column-count {
+  background: rgba(59,130,246,0.15);
+  color: #60a5fa;
+}
+
+.column-subtitle {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 4px;
+  font-weight: 400;
+}
+
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.card {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 18px 20px;
+  backdrop-filter: blur(8px);
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: #f3f4f6;
+  line-height: 1.4;
+  margin-bottom: 6px;
+}
+
+.card-description {
+  font-size: 13px;
+  color: #9ca3af;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.card-meta-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #4b5563;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.badge--storing {
+  background: rgba(239,68,68,0.12);
+  color: #f87171;
+}
+
+.badge--phase {
+  background: rgba(34,197,94,0.12);
+  color: #4ade80;
+}
+
+.badge--werkzaamheid {
+  background: rgba(245,158,11,0.12);
+  color: #fbbf24;
+}
+
+.badge--bron {
+  background: rgba(59,130,246,0.1);
+  color: #60a5fa;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 20px;
+  color: #6b7280;
+  flex: 1;
+}
+
+.empty-state-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.empty-state-icon--ok {
+  background: rgba(34,197,94,0.12);
+  color: #22c55e;
+}
+
+.empty-state-icon--neutral {
+  background: rgba(107,114,128,0.15);
+  color: #9ca3af;
+}
+
+.empty-state-icon svg { width: 24px; height: 24px; }
+
+.empty-state-text {
+  font-size: 15px;
+  font-weight: 500;
+  color: #9ca3af;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255,255,255,0.1);
+  border-top-color: #6b7280;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 10px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.update-time {
+  position: fixed;
+  bottom: 16px;
+  right: 24px;
+  font-size: 11px;
+  color: #4b5563;
+  z-index: 3;
+}
+::-webkit-scrollbar{display:none}
+</style>
+</head>
+<body>
+<div class="bg-image"></div>
+<div class="bg-overlay"></div>
+
+<div class="dashboard">
+
+  <div class="column column--storingen">
+    <div class="column-header">
+      <div class="column-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </div>
+      <div class="column-title">Actuele storingen <span class="column-count" id="storingen-count">-</span></div>
+      <div class="column-subtitle">Verstoringen op het spoor</div>
+    </div>
+    <div class="card-list" id="storingen-list">
+      <div class="loading"><div class="loading-spinner"></div>Laden...</div>
+    </div>
+  </div>
+
+  <div class="column column--werkzaamheden">
+    <div class="column-header">
+      <div class="column-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
+        </svg>
+      </div>
+      <div class="column-title">Werkzaamheden <span class="column-count" id="werkzaamheden-count">-</span></div>
+      <div class="column-subtitle">Gepland onderhoud</div>
+    </div>
+    <div class="card-list" id="werkzaamheden-list">
+      <div class="loading"><div class="loading-spinner"></div>Laden...</div>
+    </div>
+  </div>
+
+  <div class="column column--nieuws">
+    <div class="column-header">
+      <div class="column-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 22h16a2 2 0 002-2V4a2 2 0 00-2-2H8a2 2 0 00-2 2v16a2 2 0 01-2 2zm0 0a2 2 0 01-2-2v-9c0-1.1.9-2 2-2h2"/>
+          <path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6z"/>
+        </svg>
+      </div>
+      <div class="column-title">Spoornieuws</div>
+      <div class="column-subtitle">Laatste berichten</div>
+    </div>
+    <div class="card-list" id="nieuws-list">
+      <div class="loading"><div class="loading-spinner"></div>Laden...</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="update-time" id="update-time"></div>
+
+<script>
+var NS_API_BASE = 'https://gateway.apiportal.ns.nl/reisinformatie-api/api/v3/disruptions';
+var NS_API_KEY = 'ee26abae888b455e94bd6e22915603de';
+var RSS2JSON = 'https://api.rss2json.com/v1/api.json?rss_url=';
+
+var RSS_FEEDS = [
+  { url: 'https://www.treinreiziger.nl/feed/', bron: 'Treinreiziger' },
+  { url: 'https://www.spoorpro.nl/feed/', bron: 'Spoorpro' }
+];
+
+function timeAgo(date) {
+  var now = new Date();
+  var diff = Math.floor((now - date) / 1000);
+  if (diff < 0) diff = 0;
+  if (diff < 60) return 'zojuist';
+  if (diff < 3600) return Math.floor(diff / 60) + ' min geleden';
+  if (diff < 86400) return Math.floor(diff / 3600) + ' uur geleden';
+  if (diff < 172800) return 'gisteren';
+  return Math.floor(diff / 86400) + ' dagen geleden';
+}
+
+function escapeHtml(str) {
+  var el = document.createElement('span');
+  el.textContent = str || '';
+  return el.innerHTML;
+}
+
+function stripHtml(str) {
+  if (!str) return '';
+  return str.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#8217;/g, "'").replace(/&#8211;/g, '-').replace(/&#8230;/g, '...').replace(/\s+/g, ' ').trim();
+}
+
+function truncate(str, len) {
+  str = stripHtml(str);
+  return str.length > len ? str.substring(0, len) + '...' : str;
+}
+
+function formatDateRange(start, end) {
+  var opts = { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' };
+  var s = '';
+  if (start) {
+    s = new Date(start).toLocaleDateString('nl-NL', opts);
+  }
+  if (end) {
+    s += ' t/m ' + new Date(end).toLocaleDateString('nl-NL', opts);
+  }
+  return s;
+}
+
+function updateTimestamp() {
+  var now = new Date();
+  var t = now.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+  document.getElementById('update-time').textContent = 'Laatst bijgewerkt: ' + t;
+}
+
+function getDisruptionDescription(item) {
+  var parts = [];
+
+  if (item.timespans && item.timespans.length > 0) {
+    var ts = item.timespans[0];
+    if (ts.cause && ts.cause.label) {
+      parts.push(ts.cause.label.charAt(0).toUpperCase() + ts.cause.label.slice(1));
+    }
+    if (ts.situation && ts.situation.label) {
+      parts.push(ts.situation.label);
+    }
+    if (ts.additionalTravelTime && ts.additionalTravelTime.label) {
+      parts.push(ts.additionalTravelTime.label);
+    }
+  }
+
+  if (parts.length === 0 && item.expectedDuration && item.expectedDuration.description) {
+    parts.push(item.expectedDuration.description);
+  }
+
+  return parts.join(' - ');
+}
+
+function getPhaseLabel(item) {
+  if (item.phase && item.phase.label) return item.phase.label;
+  return null;
+}
+
+function renderStoringen(data) {
+  var container = document.getElementById('storingen-list');
+  var countEl = document.getElementById('storingen-count');
+  var items = [];
+
+  if (Array.isArray(data)) {
+    for (var i = 0; i < data.length; i++) {
+      if (data[i].type === 'DISRUPTION' || data[i].type === 'CALAMITY') {
+        items.push(data[i]);
+      }
+    }
+  }
+
+  countEl.textContent = items.length;
+
+  if (items.length === 0) {
+    container.innerHTML =
+      '<div class="empty-state">' +
+        '<div class="empty-state-icon empty-state-icon--ok">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+        '</div>' +
+        '<div class="empty-state-text">Geen storingen op dit moment</div>' +
+      '</div>';
+    return;
+  }
+
+  var html = '';
+  var max = Math.min(items.length, 5);
+  for (var j = 0; j < max; j++) {
+    var item = items[j];
+    var title = item.title || '';
+    var desc = getDisruptionDescription(item);
+    var phase = getPhaseLabel(item);
+
+    html += '<div class="card">';
+    html += '<div class="card-title">' + escapeHtml(truncate(title, 80)) + '</div>';
+    if (desc) {
+      html += '<div class="card-description">' + escapeHtml(truncate(desc, 160)) + '</div>';
+    }
+    html += '<div class="card-meta">';
+    if (phase) {
+      var isOver = phase.toLowerCase().indexOf('voorbij') !== -1;
+      html += '<span class="badge ' + (isOver ? 'badge--phase' : 'badge--storing') + '">' + escapeHtml(phase) + '</span>';
+    } else {
+      html += '<span class="badge badge--storing">' + (item.type === 'CALAMITY' ? 'Calamiteit' : 'Storing') + '</span>';
+    }
+    if (item.start) {
+      html += '<span class="card-meta-dot"></span><span>' + timeAgo(new Date(item.start)) + '</span>';
+    }
+    html += '</div></div>';
+  }
+  container.innerHTML = html;
+}
+
+function renderWerkzaamheden(data) {
+  var container = document.getElementById('werkzaamheden-list');
+  var countEl = document.getElementById('werkzaamheden-count');
+  var items = [];
+
+  if (Array.isArray(data)) {
+    for (var i = 0; i < data.length; i++) {
+      if (data[i].type === 'MAINTENANCE') {
+        items.push(data[i]);
+      }
+    }
+  }
+
+  countEl.textContent = items.length;
+
+  if (items.length === 0) {
+    container.innerHTML =
+      '<div class="empty-state">' +
+        '<div class="empty-state-icon empty-state-icon--neutral">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+        '</div>' +
+        '<div class="empty-state-text">Geen werkzaamheden gepland</div>' +
+      '</div>';
+    return;
+  }
+
+  var html = '';
+  var max = Math.min(items.length, 5);
+  for (var j = 0; j < max; j++) {
+    var item = items[j];
+    var title = item.title || '';
+    var period = formatDateRange(item.start, item.end);
+
+    html +=
+      '<div class="card">' +
+        '<div class="card-title">' + escapeHtml(truncate(title, 80)) + '</div>' +
+        (period ? '<div class="card-description">' + escapeHtml(period) + '</div>' : '') +
+        '<div class="card-meta">' +
+          '<span class="badge badge--werkzaamheid">Werkzaamheid</span>' +
+        '</div>' +
+      '</div>';
+  }
+  container.innerHTML = html;
+}
+
+function fetchDisruptions() {
+  fetch(NS_API_BASE + '?actual=true', {
+    headers: { 'Ocp-Apim-Subscription-Key': NS_API_KEY }
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    renderStoringen(data);
+    renderWerkzaamheden(data);
+    updateTimestamp();
+  })
+  .catch(function(err) {
+    console.error('NS API fout:', err);
+  });
+}
+
+function renderNieuws(allItems) {
+  var container = document.getElementById('nieuws-list');
+
+  allItems.sort(function(a, b) { return b.date - a.date; });
+
+  if (allItems.length === 0) {
+    container.innerHTML =
+      '<div class="empty-state">' +
+        '<div class="empty-state-icon empty-state-icon--neutral">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+        '</div>' +
+        '<div class="empty-state-text">Geen nieuws beschikbaar</div>' +
+      '</div>';
+    return;
+  }
+
+  var html = '';
+  var max = Math.min(allItems.length, 5);
+  for (var i = 0; i < max; i++) {
+    var item = allItems[i];
+    html +=
+      '<div class="card">' +
+        '<div class="card-title">' + escapeHtml(truncate(item.title, 90)) + '</div>' +
+        '<div class="card-meta">' +
+          '<span class="badge badge--bron">' + escapeHtml(item.bron) + '</span>' +
+          '<span class="card-meta-dot"></span>' +
+          '<span>' + timeAgo(item.date) + '</span>' +
+        '</div>' +
+      '</div>';
+  }
+  container.innerHTML = html;
+  updateTimestamp();
+}
+
+function fetchNieuws() {
+  var allItems = [];
+  var done = 0;
+  var total = RSS_FEEDS.length;
+
+  for (var i = 0; i < RSS_FEEDS.length; i++) {
+    (function(feed) {
+      fetch(RSS2JSON + encodeURIComponent(feed.url))
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.status === 'ok' && data.items) {
+            for (var k = 0; k < data.items.length; k++) {
+              var ri = data.items[k];
+              allItems.push({
+                title: stripHtml(ri.title || ''),
+                date: new Date(ri.pubDate),
+                bron: feed.bron
+              });
+            }
+          }
+        })
+        .catch(function(err) {
+          console.error('RSS fout (' + feed.bron + '):', err);
+        })
+        .finally(function() {
+          done++;
+          if (done === total) {
+            renderNieuws(allItems);
+          }
+        });
+    })(RSS_FEEDS[i]);
+  }
+}
+
+fetchDisruptions();
+fetchNieuws();
+
+setInterval(fetchDisruptions, 5 * 60 * 1000);
+setInterval(fetchNieuws, 10 * 60 * 1000);
+</script>
+</body>
+</html>
