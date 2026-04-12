@@ -158,16 +158,22 @@ function showSub(el) { el.classList.add('ns-active'); }
 function hideSub(el) { el.classList.remove('ns-active'); el.classList.add('ns-prev'); setTimeout(function() { resetSub(el); }, 2600); }
 
 function runLoop() {
-  if (!items.length) { setTimeout(runLoop, 5000); return; }
   var intro = document.getElementById('intro');
   var art0 = document.getElementById('art-0');
   var art1 = document.getElementById('art-1');
+  resetSub(intro); resetSub(art0); resetSub(art1);
+  showSub(intro);
+
+  if (!items.length) {
+    setTimeout(function() { hideSub(intro); runLoop(); }, INTRO_DUR + ART_DUR * 2);
+    return;
+  }
+
   var i0 = (pairIdx * 2) % items.length;
   var i1 = (pairIdx * 2 + 1) % items.length;
   pairIdx++;
   fillArt(0, items[i0]); fillArt(1, items[i1]);
-  resetSub(intro); resetSub(art0); resetSub(art1);
-  showSub(intro);
+
   setTimeout(function() {
     hideSub(intro); showSub(art0); startScroll(art0);
     setTimeout(function() {
@@ -177,6 +183,7 @@ function runLoop() {
   }, INTRO_DUR);
 }
 
+document.getElementById('intro').classList.add('ns-active');
 fetchRSS().then(function(f) { if (f.length) items = f; runLoop(); });
 setInterval(function() { fetchRSS().then(function(f) { if (f.length) items = f; }); }, 300000);
 </script>
