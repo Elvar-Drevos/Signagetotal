@@ -157,6 +157,8 @@ function fillArt(idx, item) {
 function showSub(el) { el.classList.add('ns-active'); }
 function hideSub(el) { el.classList.remove('ns-active'); el.classList.add('ns-prev'); setTimeout(function() { resetSub(el); }, 2600); }
 
+var firstRun = true;
+
 function runLoop() {
   var intro = document.getElementById('intro');
   var art0 = document.getElementById('art-0');
@@ -165,8 +167,10 @@ function runLoop() {
   showSub(intro);
 
   if (!items.length) {
-    // No items yet, keep showing intro and retry
-    setTimeout(function() { hideSub(intro); runLoop(); }, INTRO_DUR + ART_DUR * 2);
+    setTimeout(function() {
+      fetchRSS().then(function(f) { if (f.length) items = f; });
+      hideSub(intro); runLoop();
+    }, 3000);
     return;
   }
 
@@ -179,7 +183,11 @@ function runLoop() {
     hideSub(intro); showSub(art0); startScroll(art0);
     setTimeout(function() {
       hideSub(art0); showSub(art1); startScroll(art1);
-      setTimeout(function() { hideSub(art1); runLoop(); }, ART_DUR);
+      setTimeout(function() {
+        hideSub(art1);
+        if (firstRun) { firstRun = false; try { parent.postMessage('slideComplete', '*'); } catch(e) {} }
+        runLoop();
+      }, ART_DUR);
     }, ART_DUR);
   }, INTRO_DUR);
 }
