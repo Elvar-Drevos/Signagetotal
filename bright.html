@@ -2,73 +2,190 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<title>Bright</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bright Nieuws</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Inter', sans-serif; background: #000; color: #fff; overflow: hidden; }
-  
-  #wrapper { width: 100vw; height: 100vh; position: relative; }
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100vw;height:100vh;overflow:hidden;background:#000;color:#fff;cursor:none;font-family:'Inter',sans-serif}
+::-webkit-scrollbar{display:none}
 
-  .news-slide {
-    position: absolute; inset: 0;
-    display: flex; flex-direction: column; justify-content: flex-end;
-    padding: 60px; background-size: cover; background-position: center;
-  }
+.news-sub{position:absolute;inset:0;opacity:0;transition:opacity 2s ease-in-out;pointer-events:none;overflow:hidden;z-index:1}
+.news-sub.ns-active{opacity:1;pointer-events:auto;z-index:2}
+.news-sub.ns-prev{opacity:0;z-index:1;transition:opacity 2.5s ease-in-out}
 
-  /* Donkere overlay in plaats van zware blur voor meer snelheid */
-  .content-box {
-    background: rgba(0, 0, 0, 0.75);
-    padding: 40px; border-left: 8px solid #f5a623;
-    max-width: 80%; z-index: 2;
-  }
+.news-intro{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2.5vh;transition:opacity 1.5s ease-in-out}
+.news-intro-bg{position:absolute;inset:0;background:radial-gradient(ellipse at center,#1a1000 0%,#0a0a0a 70%)}
+.news-intro-glow{position:absolute;width:50vmax;height:50vmax;border-radius:50%;opacity:0.15;background:radial-gradient(circle,#f5a623,transparent 70%)}
+.news-intro-logo{position:relative;z-index:2;height:min(6vw,9vh)}
+.news-intro-label{position:relative;z-index:2;font-size:min(1.8vw,2.8vh);font-weight:500;letter-spacing:0.3em;text-transform:uppercase;opacity:0.5}
+.news-intro-line{position:relative;z-index:2;height:2px;width:min(12vw,150px);background:#f5a623}
 
-  .bright-logo-fixed {
-    position: absolute; top: 40px; left: 40px;
-    background: #f5a623; padding: 10px 20px;
-    font-weight: 900; color: #000; font-size: 24px;
-  }
+.news-bg-full{position:absolute;inset:-5%;width:110%;height:110%;object-fit:cover;object-position:center;filter:brightness(0.55);transform:scale(1);transition:transform 12s ease-out;will-change:transform}
+.news-sub.ns-active .news-bg-full{transform:scale(1.08)}
 
-  h1 { font-size: 48px; margin-bottom: 20px; line-height: 1.1; }
-  p { font-size: 22px; opacity: 0.9; line-height: 1.4; }
+.news-gradient{position:absolute;inset:0;z-index:1}
+.news-grad-bottom{background:linear-gradient(0deg,rgba(0,0,0,0.85) 0%,rgba(0,0,0,0.5) 25%,rgba(0,0,0,0.1) 55%,transparent 100%)}
+.news-grad-vignette{background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,0.5) 100%)}
+
+.news-body{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;justify-content:flex-end;padding:5vh 5vw}
+.news-source-bar{display:flex;align-items:center;gap:12px;margin-bottom:2.5vh}
+.news-source-bar svg{height:min(2.4vw,3.8vh)}
+.news-ago{font-size:min(0.9vw,1.4vh);color:rgba(255,255,255,0.4);font-weight:500;padding:0.4vh 1vw;background:rgba(255,255,255,0.08);border-radius:100px;border:1px solid rgba(255,255,255,0.06)}
+.news-title{font-size:min(3.5vw,5.5vh);font-weight:900;line-height:1.15;color:#fff;margin-bottom:2vh;max-width:70%;text-shadow:0 2px 20px rgba(0,0,0,0.5)}
+.news-desc-area{max-width:55%;max-height:18vh;overflow:hidden;position:relative}
+.news-desc-area p{font-size:min(1.2vw,1.9vh);line-height:1.8;color:rgba(255,255,255,0.7);font-weight:400}
+
+body::before{content:'';position:absolute;bottom:0;left:0;width:100%;height:4px;z-index:10;background:linear-gradient(90deg,#f5a623,#f5a623 30%,transparent)}
 </style>
 </head>
 <body>
-  <div id="wrapper">
-    <div class="bright-logo-fixed">BRIGHT</div>
-    <div id="content">
-        <div class="news-slide" style="background-image: url('https://www.bright.nl/static/bright/images/placeholder.png')">
-            <div class="content-box">
-                <h1 id="title">Laden...</h1>
-                <p id="desc">Nieuws wordt opgehaald.</p>
-            </div>
-         </div>
+<div class="news-sub news-intro" id="intro">
+  <div class="news-intro-bg"></div>
+  <div class="news-intro-glow"></div>
+  <svg class="news-intro-logo" viewBox="0 0 200 50"><text x="100" y="38" text-anchor="middle" font-family="Inter,sans-serif" font-weight="900" font-size="42" fill="#f5a623" letter-spacing="4">BRIGHT</text></svg>
+  <div class="news-intro-line"></div>
+  <span class="news-intro-label">Headlines</span>
+</div>
+<div class="news-sub" id="art-0">
+  <img class="news-bg-full" id="img-0" src="" alt="">
+  <div class="news-gradient news-grad-bottom"></div>
+  <div class="news-gradient news-grad-vignette"></div>
+  <div class="news-body">
+    <div class="news-source-bar">
+      <svg viewBox="0 0 200 50" style="height:min(2.4vw,3.8vh)"><text x="100" y="38" text-anchor="middle" font-family="Inter,sans-serif" font-weight="900" font-size="42" fill="#f5a623" letter-spacing="4">BRIGHT</text></svg>
+      <span class="news-ago" id="ago-0"></span>
     </div>
+    <h1 class="news-title" id="title-0"></h1>
+    <div class="news-desc-area"><p id="desc-0"></p></div>
   </div>
+</div>
+<div class="news-sub" id="art-1">
+  <img class="news-bg-full" id="img-1" src="" alt="">
+  <div class="news-gradient news-grad-bottom"></div>
+  <div class="news-gradient news-grad-vignette"></div>
+  <div class="news-body">
+    <div class="news-source-bar">
+      <svg viewBox="0 0 200 50" style="height:min(2.4vw,3.8vh)"><text x="100" y="38" text-anchor="middle" font-family="Inter,sans-serif" font-weight="900" font-size="42" fill="#f5a623" letter-spacing="4">BRIGHT</text></svg>
+      <span class="news-ago" id="ago-1"></span>
+    </div>
+    <h1 class="news-title" id="title-1"></h1>
+    <div class="news-desc-area"><p id="desc-1"></p></div>
+  </div>
+</div>
 
 <script>
-async function fetchBright() {
-  try {
-    const response = await fetch('https://api.allorigins.win/raw?url=https://www.bright.nl/rss/index.xml');
-    const text = await response.text();
-    const parser = new DOMParser();
-    const xml = parser.parseFromString(text, "text/xml");
-    const item = xml.querySelector("item");
-    
-    document.getElementById('title').textContent = item.querySelector("title").textContent;
-    document.getElementById('desc').textContent = item.querySelector("description").textContent.split('<')[0];
-    
-    // Probeer afbeelding te vinden
-    const media = item.getElementsByTagName('enclosure')[0] || item.getElementsByTagName('media:content')[0];
-    if(media) {
-        document.querySelector('.news-slide').style.backgroundImage = `url('${media.getAttribute('url')}')`;
-    }
-  } catch (e) { console.error(e); }
+var RSS_URL = 'https://www.bright.nl/rss/index.xml';
+var PROXY = 'https://api.allorigins.win/raw?url=';
+var INTRO_DUR = 4000;
+var ART_DUR = 8000;
+var PH_IMG = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080"><rect fill="#111" width="1920" height="1080"/></svg>');
+var items = [], pairIdx = 0;
+
+function nlTimeAgo(d) {
+  var s = Math.floor((Date.now() - new Date(d).getTime()) / 1000);
+  if (s < 60) return 'Zojuist';
+  if (s < 3600) return Math.floor(s / 60) + ' min geleden';
+  if (s < 86400) return Math.floor(s / 3600) + ' uur geleden';
+  return Math.floor(s / 86400) + ' dag(en) geleden';
 }
 
-fetchBright();
-// Ververs elke minuut zolang de slide open staat
-setInterval(fetchBright, 60000);
+function parseRSSItems(xml) {
+  var doc = new DOMParser().parseFromString(xml, 'text/xml');
+  return Array.from(doc.querySelectorAll('item')).map(function(item) {
+    var get = function(tag) { var el = item.querySelector(tag); return el ? el.textContent : ''; };
+    var img = '';
+    var media = item.querySelector('content[url], thumbnail[url]');
+    if (media) img = media.getAttribute('url');
+    if (!img) { var enc = item.querySelector('enclosure[url]'); if (enc && (enc.getAttribute('type') || '').startsWith('image')) img = enc.getAttribute('url'); }
+    if (!img) { var m = get('description').match(/<img[^>]+src="([^"]+)"/); if (m) img = m[1]; }
+    var tmp = document.createElement('div'); tmp.innerHTML = get('description');
+    return { title: get('title'), description: tmp.textContent || '', pubDate: get('pubDate'), image: img };
+  });
+}
+
+function fetchRSS() {
+  return fetch(PROXY + encodeURIComponent(RSS_URL))
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+    .then(function(xml) { var parsed = parseRSSItems(xml); if (parsed.length) return parsed; throw new Error('No items'); })
+    .catch(function(e) {
+      console.warn('allorigins failed:', e.message);
+      return fetch('https://api.rss2json.com/v1/api.json?count=10&rss_url=' + encodeURIComponent(RSS_URL))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.items && data.items.length) {
+            return data.items.map(function(item) {
+              var tmp = document.createElement('div'); tmp.innerHTML = item.description;
+              var imgUrl = item.thumbnail || (item.enclosure ? item.enclosure.link : '') || '';
+              if (!imgUrl) { var m = (item.description || '').match(/<img[^>]+src="([^"]+)"/); if (m) imgUrl = m[1]; }
+              return { title: item.title, description: tmp.textContent || '', pubDate: item.pubDate, image: imgUrl };
+            });
+          }
+          return [];
+        });
+    })
+    .catch(function(e) { console.warn('RSS fetch failed:', e.message); return []; });
+}
+
+function resetSub(el) {
+  el.classList.remove('ns-active', 'ns-prev', 'ns-instant');
+  var bg = el.querySelector('.news-bg-full');
+  if (bg) { bg.style.transition = 'none'; bg.style.transform = 'scale(1)'; }
+}
+
+function startScroll(slideEl) {
+  var area = slideEl.querySelector('.news-desc-area'); if (!area) return;
+  var p = area.querySelector('p'); if (!p) return;
+  p.style.transition = 'none'; p.style.transform = 'translateY(0)'; void p.offsetHeight;
+  var ov = p.scrollHeight - area.clientHeight;
+  if (ov > 10) { setTimeout(function() { p.style.transition = 'transform ' + (ov / 28) + 's linear'; p.style.transform = 'translateY(-' + ov + 'px)'; }, 3500); }
+}
+
+function fillArt(idx, item) {
+  var title = document.getElementById('title-' + idx);
+  var desc = document.getElementById('desc-' + idx);
+  var img = document.getElementById('img-' + idx);
+  var ago = document.getElementById('ago-' + idx);
+  if (title) title.textContent = item.title;
+  if (desc) desc.textContent = item.description;
+  if (img) img.src = item.image || PH_IMG;
+  if (ago) { ago.dataset.pubdate = item.pubDate; ago.textContent = nlTimeAgo(item.pubDate); }
+}
+
+function showSub(el) { el.classList.add('ns-active'); }
+function hideSub(el) { el.classList.remove('ns-active'); el.classList.add('ns-prev'); setTimeout(function() { resetSub(el); }, 2600); }
+
+function runLoop() {
+  var intro = document.getElementById('intro');
+  var art0 = document.getElementById('art-0');
+  var art1 = document.getElementById('art-1');
+  resetSub(intro); resetSub(art0); resetSub(art1);
+  showSub(intro);
+
+  if (!items.length) {
+    setTimeout(function() { hideSub(intro); runLoop(); }, INTRO_DUR + ART_DUR * 2);
+    return;
+  }
+
+  var i0 = (pairIdx * 2) % items.length;
+  var i1 = (pairIdx * 2 + 1) % items.length;
+  pairIdx++;
+  fillArt(0, items[i0]); fillArt(1, items[i1]);
+
+  setTimeout(function() {
+    hideSub(intro); showSub(art0); startScroll(art0);
+    setTimeout(function() {
+      hideSub(art0); showSub(art1); startScroll(art1);
+      setTimeout(function() { hideSub(art1); runLoop(); }, ART_DUR);
+    }, ART_DUR);
+  }, INTRO_DUR);
+}
+
+document.getElementById('intro').classList.add('ns-active');
+fetchRSS().then(function(f) { if (f.length) items = f; runLoop(); });
+setInterval(function() { fetchRSS().then(function(f) { if (f.length) items = f; }); }, 300000);
 </script>
 </body>
 </html>
